@@ -43,12 +43,12 @@ class PFAgent(Agent):
                         #dx += np.sign(math.cos(theta + offset)) * 100000
                         #dy += np.sign(math.sin(theta + offset)) * 100000
                     #else:
-                    print("I have an obstacle at angle " + str(theta + offset))
+
                     # if we have something that is upsetting (like we have an angle)
                     distance = dist_sensors[i]
-                    print("here is how far away the fetcher is" + str(distance))
-                    dx += -(distance - radius) * math.cos(theta + offset) * 2
-                    dy += -(distance - radius) * math.sin(theta + offset) * 0.5
+
+                    dx += (-(distance - radius) * math.cos(theta + offset) * 2) / (0.5 * distance)
+                    dy += (-(distance - radius) * math.sin(theta + offset) * 0.5) / (0.5 * distance)
                 theta = inc + theta
                 # kind of a dumb way to do it, but it might make more sense if I dive into it further
 
