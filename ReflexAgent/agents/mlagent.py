@@ -17,8 +17,9 @@ class MLAgent(Agent):
         model_path = './models/agent_mdl.pkl'
         load_success = self.load(model_path)
         if not load_success:
+            print("training our model...")
             # TODO: generate your own data
-            df = pd.read_csv(f'./data/robot_recording_sample.csv')
+            df = pd.read_csv(f'./data/robot_recording_01-29-2025_18-28-48.csv')
 
             # Here is an example of feature engineering
             # This creates features to encode the robots rotation in radians and as well as in an xy heading format
