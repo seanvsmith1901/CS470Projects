@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import random as rand
 import reversi
@@ -27,5 +29,64 @@ class ReversiBot:
         '''
         valid_moves = state.get_valid_moves()
 
-        move = rand.choice(valid_moves) # Moves randomly...for now
-        return move
+        if self.move_num == 1:
+            maximizing_player = True
+        else:
+            maximizing_player = False
+        current_depth = 4
+
+        current_best_move = None
+        best_value, best_move = self.minmax(state, state.board, current_depth, maximizing_player, current_best_move)
+        return best_move
+
+
+    def minmax(self, state, board, depth, maximizingPlayer, current_best_move):
+        if depth == 0 or len(state.get_valid_moves()) == 0:
+            return self.heuristic_eval(board, maximizingPlayer, current_best_move)
+        if maximizingPlayer:
+            value = -math.inf
+            best_move = None
+            for move in state.get_valid_moves():
+                new_value, best_move = self.minmax(state, board, depth - 1, False, best_move)
+                if new_value > value:
+                    value = new_value
+                    best_move = move
+            return value, best_move
+        else:
+            value = math.inf
+            best_move = None
+            for move in state.get_valid_moves():
+                new_value, best_move = self.minmax(state, board, depth - 1, True, best_move)
+                if new_value < value:
+                    value = new_value
+                    best_move = move
+            return value, best_move
+
+
+
+
+    def heuristic_eval(self, board, maximizingPlayer, current_best_move):
+        SQUARE_VALUES = [
+            [120, -20, 20, 5, 5, 20, -20, 120],
+            [-20, -40, -5, -5, -5, -5, -40, -20],
+            [20, -5, 15, 3, 3, 15, -5, 20],
+            [5, -5, 3, 3, 3, 3, -5, 5],
+            [5, -5, 3, 3, 3, 3, -5, 5],
+            [20, -5, 15, 3, 3, 15, -5, 20],
+            [-20, -40, -5, -5, -5, -5, -40, -20],
+            [120, -20, 20, 5, 5, 20, -20, 120],
+        ]
+        player_1_score = 0
+        player_2_score = 0
+
+        for i in range(8):
+            for j in range(8):
+                if board[i][j] == 1:
+                    player_1_score += SQUARE_VALUES[i][j]
+                if board[i][j] == 2:
+                    player_2_score += SQUARE_VALUES[i][j]
+
+        if maximizingPlayer:
+            return player_1_score, current_best_move
+        else:
+            return player_2_score, current_best_move
