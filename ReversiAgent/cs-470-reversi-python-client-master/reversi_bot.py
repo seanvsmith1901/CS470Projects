@@ -27,40 +27,52 @@ class ReversiBot:
 
         Move should be a tuple (row, col) of the move you want the bot to make.
         '''
-        valid_moves = state.get_valid_moves()
 
         if self.move_num == 1:
             maximizing_player = True
         else:
             maximizing_player = False
-        current_depth = 4
+        current_depth = 5
 
         current_best_move = None
-        best_value, best_move = self.minmax(state, state.board, current_depth, maximizing_player, current_best_move)
+        best_value, best_move = self.minmax(state, state.board, current_depth, maximizing_player, current_best_move, -math.inf, math.inf)
         return best_move
 
 
-    def minmax(self, state, board, depth, maximizingPlayer, current_best_move):
+    def minmax(self, state, board, depth, maximizingPlayer, current_best_move, alpha, beta):
         if depth == 0 or len(state.get_valid_moves()) == 0:
             return self.heuristic_eval(board, maximizingPlayer, current_best_move)
+
         if maximizingPlayer:
-            value = -math.inf
+
+            best_val = -math.inf
             best_move = None
             for move in state.get_valid_moves():
-                new_value, best_move = self.minmax(state, board, depth - 1, False, best_move)
-                if new_value > value:
-                    value = new_value
+                new_board = board.copy()
+                new_board[move[0]][move[1]] = 1
+                new_value, best_move = self.minmax(state, new_board, depth - 1, False, best_move, alpha, beta)
+                if new_value > best_val:
                     best_move = move
-            return value, best_move
+                    best_val = new_value
+                alpha = max(alpha, best_val)
+                if alpha >= best_val:
+                    break
+            return best_val, best_move
+
         else:
-            value = math.inf
+            best_val = math.inf
             best_move = None
             for move in state.get_valid_moves():
-                new_value, best_move = self.minmax(state, board, depth - 1, True, best_move)
-                if new_value < value:
-                    value = new_value
+                new_board = board.copy()
+                new_board[move[0]][move[1]] = 1
+                new_value, best_move = self.minmax(state, new_board, depth - 1, True, best_move, alpha, beta)
+                if new_value < best_val:
+                    best_val = new_value
                     best_move = move
-            return value, best_move
+                beta = min(beta, best_val)
+                if beta <= alpha:
+                    break
+            return best_val, best_move
 
 
 
