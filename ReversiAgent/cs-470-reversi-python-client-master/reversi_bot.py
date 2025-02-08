@@ -52,12 +52,12 @@ class ReversiBot:
                 new_board = board.copy()
                 new_board[move[0]][move[1]] = 1
                 state.board = new_board # that could do it.
-                new_value, best_move = self.minmax(state, new_board, depth - 1, False, best_move, alpha, beta)
+                new_value, _ = self.minmax(state, new_board, depth - 1, False, best_move, alpha, beta)
                 if new_value > best_val:
                     best_move = move
                     best_val = new_value
                 alpha = max(alpha, best_val)
-                if alpha >= best_val:
+                if beta <= alpha:
                     break
             return best_val, best_move
 
@@ -68,7 +68,7 @@ class ReversiBot:
                 new_board = board.copy()
                 new_board[move[0]][move[1]] = 1
                 state.board = new_board  # that could do it.
-                new_value, best_move = self.minmax(state, new_board, depth - 1, True, best_move, alpha, beta)
+                new_value, _ = self.minmax(state, new_board, depth - 1, True, best_move, alpha, beta)
                 if new_value < best_val:
                     best_val = new_value
                     best_move = move
@@ -82,14 +82,14 @@ class ReversiBot:
 
     def heuristic_eval(self, board, maximizingPlayer, current_best_move):
         SQUARE_VALUES = [
-            [120, -20, 20, 5, 5, 20, -20, 120],
-            [-20, -40, -5, -5, -5, -5, -40, -20],
-            [20, -5, 15, 3, 3, 15, -5, 20],
-            [5, -5, 3, 3, 3, 3, -5, 5],
-            [5, -5, 3, 3, 3, 3, -5, 5],
-            [20, -5, 15, 3, 3, 15, -5, 20],
-            [-20, -40, -5, -5, -5, -5, -40, -20],
-            [120, -20, 20, 5, 5, 20, -20, 120],
+            [100, -10, 11, 6, 6, 11, -10, 100],
+            [-10, -20, 1, 2, 2, 1, -20, -10],
+            [10, 1, 5, 4, 4, 5, 1, 10],
+            [6, 2, 4, 2, 2, 4, 2, 6],
+            [6, 2, 4, 2, 2, 4, 2, 6],
+            [10, 1, 5, 4, 4, 5, 1, 10],
+            [-10, -20, 1, 2, 2, 1, -20, -10],
+            [100, -10, 11, 6, 6, 11, -10, 100],
         ]
         player_1_score = 0
         player_2_score = 0
