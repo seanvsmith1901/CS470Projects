@@ -32,7 +32,7 @@ class ReversiBot:
             maximizing_player = True
         else:
             maximizing_player = False
-        current_depth = 5
+        current_depth = 7
 
         current_best_move = None
         best_value, best_move = self.minmax(state, state.board, current_depth, maximizing_player, current_best_move, -math.inf, math.inf)
@@ -40,16 +40,18 @@ class ReversiBot:
 
 
     def minmax(self, state, board, depth, maximizingPlayer, current_best_move, alpha, beta):
-        if depth == 0 or len(state.get_valid_moves()) == 0:
+        valid_moves = state.get_valid_moves()
+        if depth == 0 or len(valid_moves) == 0:
             return self.heuristic_eval(board, maximizingPlayer, current_best_move)
 
         if maximizingPlayer:
 
             best_val = -math.inf
             best_move = None
-            for move in state.get_valid_moves():
+            for move in valid_moves:
                 new_board = board.copy()
                 new_board[move[0]][move[1]] = 1
+                state.board = new_board # that could do it.
                 new_value, best_move = self.minmax(state, new_board, depth - 1, False, best_move, alpha, beta)
                 if new_value > best_val:
                     best_move = move
@@ -62,9 +64,10 @@ class ReversiBot:
         else:
             best_val = math.inf
             best_move = None
-            for move in state.get_valid_moves():
+            for move in valid_moves:
                 new_board = board.copy()
                 new_board[move[0]][move[1]] = 1
+                state.board = new_board  # that could do it.
                 new_value, best_move = self.minmax(state, new_board, depth - 1, True, best_move, alpha, beta)
                 if new_value < best_val:
                     best_val = new_value
