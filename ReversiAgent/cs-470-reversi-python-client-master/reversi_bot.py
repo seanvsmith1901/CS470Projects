@@ -32,7 +32,7 @@ class ReversiBot:
             maximizing_player = True
         else:
             maximizing_player = False
-        current_depth = 7
+        current_depth = 5
 
         current_best_move = None
         best_value, best_move = self.minmax(state, state.board, current_depth, maximizing_player, current_best_move, -math.inf, math.inf)
@@ -42,7 +42,8 @@ class ReversiBot:
     def minmax(self, state, board, depth, maximizingPlayer, current_best_move, alpha, beta):
         valid_moves = state.get_valid_moves()
         if depth == 0 or len(valid_moves) == 0:
-            return self.heuristic_eval(board, maximizingPlayer, current_best_move)
+            return self.heuristic_eval(board, current_best_move)
+
 
         if maximizingPlayer:
 
@@ -50,15 +51,17 @@ class ReversiBot:
             best_move = None
             for move in valid_moves:
                 new_board = board.copy()
-                new_board[move[0]][move[1]] = 1
+                new_board = self.play_move(new_board, move, player=1)
                 state.board = new_board # that could do it.
                 new_value, _ = self.minmax(state, new_board, depth - 1, False, best_move, alpha, beta)
                 if new_value > best_val:
                     best_move = move
                     best_val = new_value
+
                 alpha = max(alpha, best_val)
                 if beta <= alpha:
                     break
+
             return best_val, best_move
 
         else:
@@ -66,21 +69,47 @@ class ReversiBot:
             best_move = None
             for move in valid_moves:
                 new_board = board.copy()
-                new_board[move[0]][move[1]] = 1
+                new_board = self.play_move(new_board, move, player=2)
                 state.board = new_board  # that could do it.
                 new_value, _ = self.minmax(state, new_board, depth - 1, True, best_move, alpha, beta)
+
                 if new_value < best_val:
                     best_val = new_value
                     best_move = move
+
                 beta = min(beta, best_val)
+
                 if beta <= alpha:
                     break
+
             return best_val, best_move
 
 
+    def play_move(self, board, move, player):
+        row, col = move
+        opponent = 2 if player == 1 else 1
+        # we should check to see if its a valid move, but I am going to assume that only valid moves get passed in.
+        board[row][col] = player
+
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+        for dr, dc in directions:
+            self.flip_peices(board, row, col, dr, dc, player, opponent)
+        return board
+
+    def flip_peices(self, board, row, col, dr, dc, player, opponent):
+        r,c = row + dr, col + dc
+        pieces_to_clip = []
+
+        while 0 <= r < 8 and  0 <= c < 8 and board[r][c] == opponent:
+            pieces_to_clip.append((r, c))
+            r,c = r + dr, c + dc
+
+        if 0 <= r < 8 and 0 <= c < 8 and board[r][c] == player:
+            for r_flip, c_flip in pieces_to_clip:
+                board[r_flip][c_flip] = player
 
 
-    def heuristic_eval(self, board, maximizingPlayer, current_best_move):
+    def heuristic_eval(self, board, current_best_move):
         SQUARE_VALUES = [
             [100, -10, 11, 6, 6, 11, -10, 100],
             [-10, -20, 1, 2, 2, 1, -20, -10],
@@ -101,7 +130,4 @@ class ReversiBot:
                 if board[i][j] == 2:
                     player_2_score += SQUARE_VALUES[i][j]
 
-        if maximizingPlayer:
-            return player_1_score, current_best_move
-        else:
-            return player_2_score, current_best_move
+        return player_1_score - player_2_score, current_best_move # keeps me focusd on gamestate, not individual move
