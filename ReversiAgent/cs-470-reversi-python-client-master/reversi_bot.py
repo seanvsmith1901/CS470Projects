@@ -32,7 +32,7 @@ class ReversiBot:
             maximizing_player = True
         else:
             maximizing_player = False
-        current_depth = 5
+        current_depth = 6
 
         current_best_move = None
         best_value, best_move = self.minmax(state, state.board, current_depth, maximizing_player, current_best_move, -math.inf, math.inf)
@@ -42,7 +42,7 @@ class ReversiBot:
     def minmax(self, state, board, depth, maximizingPlayer, current_best_move, alpha, beta):
         valid_moves = state.get_valid_moves()
         if depth == 0 or len(valid_moves) == 0:
-            return self.heuristic_eval(board, current_best_move)
+            return self.heuristic_eval(board, current_best_move, state)
 
 
         if maximizingPlayer:
@@ -109,7 +109,7 @@ class ReversiBot:
                 board[r_flip][c_flip] = player
 
 
-    def heuristic_eval(self, board, current_best_move):
+    def heuristic_eval(self, board, current_best_move, state):
         SQUARE_VALUES = [
             [100, -10, 11, 6, 6, 11, -10, 100],
             [-10, -20, 1, 2, 2, 1, -20, -10],
@@ -123,6 +123,9 @@ class ReversiBot:
         player_1_score = 0
         player_2_score = 0
 
+
+
+
         for i in range(8):
             for j in range(8):
                 if board[i][j] == 1:
@@ -130,4 +133,10 @@ class ReversiBot:
                 if board[i][j] == 2:
                     player_2_score += SQUARE_VALUES[i][j]
 
-        return player_1_score - player_2_score, current_best_move # keeps me focusd on gamestate, not individual move
+        new_score = player_1_score - player_2_score
+
+        if len(state.get_valid_moves()) > 0: # this makes us think faster if nothing else
+            new_score = new_score / len(state.get_valid_moves())
+
+
+        return new_score, current_best_move # keeps me focusd on gamestate, not individual move
