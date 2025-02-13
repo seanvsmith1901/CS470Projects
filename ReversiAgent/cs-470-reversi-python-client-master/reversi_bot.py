@@ -3,6 +3,8 @@ import math
 import numpy as np
 import random as rand
 import reversi
+import time
+import ReversiAgent.R
 
 class ReversiBot:
     def __init__(self, move_num):
@@ -33,8 +35,8 @@ class ReversiBot:
         else:
             maximizing_player = False
         current_depth = 6
-
         current_best_move = None
+        new_timer = Timer()
         best_value, best_move = self.minmax(state, state.board, current_depth, maximizing_player, current_best_move, -math.inf, math.inf)
         return best_move
 
@@ -42,7 +44,7 @@ class ReversiBot:
     def minmax(self, state, board, depth, maximizingPlayer, current_best_move, alpha, beta):
         valid_moves = state.get_valid_moves()
         if depth == 0 or len(valid_moves) == 0:
-            return self.heuristic_eval(board, current_best_move, state)
+            return self.heuristic_eval(board, current_best_move, state, maximizingPlayer)
 
 
         if maximizingPlayer:
@@ -109,7 +111,7 @@ class ReversiBot:
                 board[r_flip][c_flip] = player
 
 
-    def heuristic_eval(self, board, current_best_move, state):
+    def heuristic_eval(self, board, current_best_move, state, maximizingPlayer):
         SQUARE_VALUES = [
             [100, -10, 11, 6, 6, 11, -10, 100],
             [-10, -20, 1, 2, 2, 1, -20, -10],
@@ -123,9 +125,6 @@ class ReversiBot:
         player_1_score = 0
         player_2_score = 0
 
-
-
-
         for i in range(8):
             for j in range(8):
                 if board[i][j] == 1:
@@ -136,7 +135,7 @@ class ReversiBot:
         new_score = player_1_score - player_2_score
 
         if len(state.get_valid_moves()) > 0: # this makes us think faster if nothing else
-            new_score = new_score / len(state.get_valid_moves())
+                new_score = new_score / len(state.get_valid_moves()) # close off their moves
 
 
         return new_score, current_best_move # keeps me focusd on gamestate, not individual move
