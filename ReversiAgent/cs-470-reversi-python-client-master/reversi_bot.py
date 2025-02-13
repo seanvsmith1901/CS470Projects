@@ -4,11 +4,11 @@ import numpy as np
 import random as rand
 import reversi
 import time
-import ReversiAgent.R
 
 class ReversiBot:
     def __init__(self, move_num):
         self.move_num = move_num
+        self.max_player = True
 
     def make_move(self, state):
         '''
@@ -32,18 +32,21 @@ class ReversiBot:
 
         if self.move_num == 1:
             maximizing_player = True
+            self.max_player = True
         else:
             maximizing_player = False
-        current_depth = 6
+            self.max_player = False
+
+        current_depth = 5
         current_best_move = None
-        new_timer = Timer()
-        best_value, best_move = self.minmax(state, state.board, current_depth, maximizing_player, current_best_move, -math.inf, math.inf)
+        new_timer = Timer(15)
+        best_value, best_move = self.minmax(state, state.board, current_depth, maximizing_player, current_best_move, -math.inf, math.inf, new_timer)
         return best_move
 
 
-    def minmax(self, state, board, depth, maximizingPlayer, current_best_move, alpha, beta):
+    def minmax(self, state, board, depth, maximizingPlayer, current_best_move, alpha, beta, timer):
         valid_moves = state.get_valid_moves()
-        if depth == 0 or len(valid_moves) == 0:
+        if depth == 0 or len(valid_moves) == 0 or timer.time_out():
             return self.heuristic_eval(board, current_best_move, state, maximizingPlayer)
 
 
@@ -55,7 +58,7 @@ class ReversiBot:
                 new_board = board.copy()
                 new_board = self.play_move(new_board, move, player=1)
                 state.board = new_board # that could do it.
-                new_value, _ = self.minmax(state, new_board, depth - 1, False, best_move, alpha, beta)
+                new_value, _ = self.minmax(state, new_board, depth - 1, False, best_move, alpha, beta, timer)
                 if new_value > best_val:
                     best_move = move
                     best_val = new_value
@@ -73,7 +76,7 @@ class ReversiBot:
                 new_board = board.copy()
                 new_board = self.play_move(new_board, move, player=2)
                 state.board = new_board  # that could do it.
-                new_value, _ = self.minmax(state, new_board, depth - 1, True, best_move, alpha, beta)
+                new_value, _ = self.minmax(state, new_board, depth - 1, True, best_move, alpha, beta, timer)
 
                 if new_value < best_val:
                     best_val = new_value
@@ -134,8 +137,29 @@ class ReversiBot:
 
         new_score = player_1_score - player_2_score
 
-        if len(state.get_valid_moves()) > 0: # this makes us think faster if nothing else
-                new_score = new_score / len(state.get_valid_moves()) # close off their moves
-
+        if len(state.get_valid_moves()) > 0:
+            if self.max_player:
+                if maximizingPlayer:
+                    new_score = new_score * len(state.get_valid_moves())
+                else:
+                    new_score = new_score / len(state.get_valid_moves())
+            else:
+                if maximizingPlayer:
+                    new_score = new_score / len(state.get_valid_moves())
+                else:
+                    new_score = new_score * len(state.get_valid_moves())
 
         return new_score, current_best_move # keeps me focusd on gamestate, not individual move
+
+
+
+class Timer:
+    def __init__(self, time_limit: float = 60):
+        self.start = time.time()
+        self.time_limit = time_limit
+
+    def time(self) -> float:
+        return time.time() - self.start
+
+    def time_out(self) -> bool:
+        return self.time() > self.time_limit
