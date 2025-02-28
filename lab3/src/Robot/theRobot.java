@@ -408,6 +408,13 @@ public class theRobot extends JFrame {
     //       For example, the sonar string 1001, specifies that the sonars found a wall in the North and West directions, but not in the South and East directions
     void updateProbabilities(int action, String sonars) {
         // your code
+
+        //NORTH = 0;
+        //SOUTH = 1;
+        //EAST = 2;
+        //WEST = 3;
+        //STAY = 4;
+
         // well fetch I have to do this in java. Wonderful. I haven't really written in java since
         // 240 so this will be interesting. Pythong is much more my strong suit.
         // well. We need to write 2 functions.
@@ -430,16 +437,20 @@ public class theRobot extends JFrame {
         // we need to use probMove and sensorAccuracy.
 
         // if the tile is a stair or the goal, we can zero out those probabilites while the game is still running. very neat.
-        new_world = old_world.copy(); // use this to update the probabilities and return this
+        //new_world = old_world.copy(); // use this to update the probabilities and return this
         // I think we are supposed to use the probs object? just update that
-        double[][] new_prob;
+        double[][] new_prob = probs;
 
-        for state in states {
-            // b_bar = transitionModel(action, state)
-            // b = sensorModel(sonars) * b_bar;
-            // new_probs[i][j] = b
+        for (int i = 0; i < probs.length; i++) { // should be the same right?
+            for (int j = 0; j < probs.length; j++) {
+
+                double b_bar = transitionModel(action, i, j);
+                double b = sensorModel(sonars, i, j) * b_bar;
+                new_prob[i][j] = b;
+            }
         }
-        // new_probs.normalize()
+
+        probs = normalize2dArray(new_prob); // normalize new probs and update old probs.
 
 
 
@@ -449,32 +460,129 @@ public class theRobot extends JFrame {
     }
 
     // grounded state shows the state that we are considering and action is the action that has been passed from the client.
-    float transitionModel(int action, grounded_state) { // we should just need the action we have taken and the world state
-        float individual_prob = 0.0F;
-        for state in states { // yeah sorry I don't know the actual terms yet
-            if state is adjacted to grounded_state {
-                individual_prob += doStuff(); // here we need to calculate the probability that we stay
-                // review how to do this tomorrow. the rest of the stuff should be where I want them to be.
-            }
-            else{
-                pass // not adjacent so we can consider it 0
+    double transitionModel(int action, int grounded_x, int grounded_y) { // we should just need the action we have taken and the world state
+        double individual_prob = 0.0;
+        int row_modifier = 0;
+        int col_modifier = 0;
+
+        //TODO: ask for help on this cause I can't figure it out for the life of me.
+
+        // lets us know how we are trying to modify our grounded positons given our action.
+        if (action == 0) {
+            row_modifier = -1;
+        }
+        if (action == 1) {
+            row_modifier = 1;
+        }
+        if (action == 2) {
+            col_modifier = 1;
+        }
+        if (action == 3) {
+            col_modifier = -1;
+        }
+
+
+        for (int i = 0; i < probs.length; i++) {
+            for (int j = 0; j < probs.length; j++) {
+                if (isAdjacent(grounded_x, grounded_y, i, j))
+                {
+                    double new_prob = calculate_transition(grounded_x, grounded_y, i, j, action) * probs[i][j]; // DEFINIE HOW THIS WORKS AGAIN
+                }
+                else {
+                    ; // do nothing
+                }
             }
 
         }
         return individual_prob;
     }
 
-    float sesorModel(String sonars, state) {
-        for thing in sonars {
-            // check north south east and west -
-            // if they don't match (there is a wall when there shouldn't be, etc)
-            // multiply by 1 - ps
-            // else mutlkply by ps
-            // and then take this and multply it by the previous probabilits
+    double calculate_transition(int grounded_x, int grounded_y, int current_x, int current_y, int action) {
 
+        return 10.0;
+    }
+
+    boolean isAdjacent(int grounded_x, int grounded_y, int current_x, int current_y) {
+        if (grounded_x == current_x && grounded_y == current_y) {
+            return true;
+        }
+        if (grounded_x == current_x + 1 && grounded_y == current_y) {
+            return true;
+        }
+        if (grounded_x == current_x - 1 && grounded_y == current_y) {
+            return true;
+        }
+        if (grounded_x == current_x && grounded_y == current_y + 1) {
+            return true;
+        }
+        if (grounded_x == current_x && grounded_y == current_y - 1) {
+            return true;
+        }
+        else { // i could do this inline but I feel that this is easier to read and understand.
+            return false;
+        }
+    }
+
+    double sensorModel(String sonars, int current_x, int current_y) {
+        double current_prob = 1;
+
+        for (int i = 0; i < sonars.length(); i++) {
+
+            int row_modifier = 0;
+            int col_modifier = 0;
+
+            if (i == 0) {
+                row_modifier = -1;
+            }
+            if (i == 1) {
+                row_modifier = 1;
+            }
+            if (i == 2) {
+                col_modifier = 1;
+            }
+            if (i == 3) {
+                col_modifier = -1;
+            }
+
+            char c = sonars.charAt(i);
+            // positive match: both free.
+            if ((mundo.grid[current_x+row_modifier][current_y+col_modifier] == 1) && (c == '0' || c == '3'))  {
+                current_prob = current_prob * sensorAccuracy;
+            }
+            // negative match; both wall
+            if ((mundo.grid[current_x+row_modifier][current_y+col_modifier] == 0) && (c == '1' || c == '2')) {
+                current_prob = current_prob * sensorAccuracy;
+            }
+            else { // if there is a mismatch
+                current_prob = current_prob * (1-sensorAccuracy);
+            }
         }
 
-        return 10.0F;
+        return current_prob;
+    }
+
+    double[][] normalize2dArray(double[][] array) {
+        int rows = array.length;
+        int cols = array[0].length;
+        double[][] normalized = new double[rows][cols];
+        double minVal = array[0][0];
+        double maxVal = array[0][0];
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (array[i][j] < minVal) {
+                    minVal = array[i][j];
+                }
+                if (array[i][j] > maxVal) {
+                    maxVal = array[i][j];
+                }
+            }
+        }
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                normalized[i][j] = (array[i][j] - minVal) / (maxVal - minVal);
+            }
+        }
+        return normalized;
     }
 
 
