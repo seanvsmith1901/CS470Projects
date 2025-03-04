@@ -409,6 +409,8 @@ public class theRobot extends JFrame {
     void updateProbabilities(int action, String sonars) {
         // your code
 
+        // is 0,0 a wall or do I need to check for out of bounds errors too. FETCH.
+
         //NORTH = 0;
         //SOUTH = 1;
         //EAST = 2;
@@ -455,17 +457,28 @@ public class theRobot extends JFrame {
 
 
         // we need to update the 2d array probs for this project
+        zeroOutStairsAndWalls(); // zeros out the stairs and walls, as stated.
         myMaps.updateProbs(probs); // call this function after updating your probabilities so that the
                                    //  new probabilities will show up in the probability map on the GUI
     }
 
+    void zeroOutStairsAndWalls() { // we can't be in a stair, in a wall or on the goal when we start or stop, so this just zeros it out for us.
+        for (int y = 0; y < mundo.height; y++) {
+            for (int x = 0; x < mundo.width; x++) {
+                if ((mundo.grid[y][x] == 1) || (mundo.grid[y][x] == 2) || (mundo.grid[y][x] == 3)) {
+                    probs[x][y] = 0;
+                }
+            }
+        }
+    }
+
     // grounded state shows the state that we are considering and action is the action that has been passed from the client.
     double transitionModel(int action, int grounded_x, int grounded_y) { // we should just need the action we have taken and the world state
-        double individual_prob = 0.0;
+        double individual_prob = 1.0;
         int row_modifier = 0;
         int col_modifier = 0;
 
-        //TODO: ask for help on this cause I can't figure it out for the life of me.
+        //TODO: I think? I have it? maybe?
 
         // lets us know how we are trying to modify our grounded positons given our action.
         if (action == 0) {
@@ -484,9 +497,9 @@ public class theRobot extends JFrame {
 
         for (int i = 0; i < probs.length; i++) {
             for (int j = 0; j < probs.length; j++) {
-                if (isAdjacent(grounded_x, grounded_y, i, j))
+                if (isAdjacent(grounded_x, grounded_y, i, j))  // only makes sense if we CAN move there.
                 {
-                    double new_prob = calculate_transition(grounded_x, grounded_y, i, j, action) * probs[i][j]; // DEFINIE HOW THIS WORKS AGAIN
+                    individual_prob += calculate_transition(grounded_x, grounded_y, i, j, col_modifier, row_modifier, action); // DEFINIE HOW THIS WORKS AGAIN
                 }
                 else {
                     ; // do nothing
@@ -497,9 +510,30 @@ public class theRobot extends JFrame {
         return individual_prob;
     }
 
-    double calculate_transition(int grounded_x, int grounded_y, int current_x, int current_y, int action) {
+    // how do I factor in walls and whatnot. That is what I don't know.
 
-        return 10.0;
+    double calculate_transition(int grounded_x, int grounded_y, int current_x, int current_y, int col_modifier, int row_modifier, int action) {
+        if ((current_x + col_modifier == grounded_x) && (current_y + row_modifier == grounded_y)) {
+            return moveProb * probs[current_x][current_y];
+        }
+        else {
+            // need to check the adjacent states nad see if they are free
+            int newSum = 0;
+            if ((mundo.grid[current_x+1][current_y] == 1) || (mundo.grid[current_x+1][current_y] == 2)) {
+                newSum += 1;
+            }
+            if ((mundo.grid[current_x-1][current_y] == 1) || (mundo.grid[current_x-1][current_y] == 2)) {
+                newSum += 1;
+            }
+            if ((mundo.grid[current_x][current_y+1] == 1) || (mundo.grid[current_x][current_y+1] == 2)) {
+                newSum += 1;
+            }
+            if ((mundo.grid[current_x][current_y-1] == 1) || (mundo.grid[current_x][current_y-1] == 2)) {
+                newSum += 1;
+            }
+            return ((1 - moveProb) / newSum) * probs[current_x][current_y];
+        }
+
     }
 
     boolean isAdjacent(int grounded_x, int grounded_y, int current_x, int current_y) {
