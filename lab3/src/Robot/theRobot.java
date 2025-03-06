@@ -8,6 +8,7 @@ import java.lang.*;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import java.io.*;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.Scanner;
 import java.net.*;
@@ -407,41 +408,9 @@ public class theRobot extends JFrame {
     // Note: sonars is a bit string with four characters, specifying the sonar reading in the direction of North, South, East, and West
     //       For example, the sonar string 1001, specifies that the sonars found a wall in the North and West directions, but not in the South and East directions
     void updateProbabilities(int action, String sonars) {
-        // your code
 
-        // is 0,0 a wall or do I need to check for out of bounds errors too. FETCH.
-
-        //NORTH = 0;
-        //SOUTH = 1;
-        //EAST = 2;
-        //WEST = 3;
-        //STAY = 4;
-
-        // well fetch I have to do this in java. Wonderful. I haven't really written in java since
-        // 240 so this will be interesting. Pythong is much more my strong suit.
-        // well. We need to write 2 functions.
-        // also it looks like the map is a class variable, which takes some load of off me trying to update it all by hand.
-        // so thats fun.
-
-
-        //moveProb = Double.parseDouble(sin.readLine());
-        //sensorAccuracy = Double.parseDouble(sin.readLine());
-
-        // we receive the world information thorugh the sonars
-        // i think we get a world map through our class object? that seems to be most likely?
-        // the probablility of a misclick is a class object somewhere as well, but I can't seem to find it.
-        // the probability of a missense from a sensor is also in here somewhere but I can't seem to find it.
-
-        // the previous state should be stored in probabilitiesm
-        // don't forget to normalize.
-
-        // 0,0 is the TOP LEFT corner of the world (just like stag hare :( )
-        // we need to use probMove and sensorAccuracy.
-
-        // if the tile is a stair or the goal, we can zero out those probabilites while the game is still running. very neat.
-        //new_world = old_world.copy(); // use this to update the probabilities and return this
-        // I think we are supposed to use the probs object? just update that
-        double[][] new_prob = probs;
+        // try to separate them a little more.
+        double[][] new_prob = new double[probs.length][probs[0].length];
 
         for (int i = 0; i < probs.length; i++) { // should be the same right?
             for (int j = 0; j < probs.length; j++) {
@@ -453,9 +422,6 @@ public class theRobot extends JFrame {
         }
 
         probs = normalize2dArray(new_prob); // normalize new probs and update old probs.
-
-
-
         // we need to update the 2d array probs for this project
         zeroOutStairsAndWalls(); // zeros out the stairs and walls, as stated.
         myMaps.updateProbs(probs); // call this function after updating your probabilities so that the
@@ -500,8 +466,7 @@ public class theRobot extends JFrame {
                 if (isAdjacent(grounded_x, grounded_y, i, j))  // only makes sense if we CAN move there.
                 {
                     individual_prob += calculate_transition(grounded_x, grounded_y, i, j, col_modifier, row_modifier, action); // DEFINIE HOW THIS WORKS AGAIN
-                }
-                else {
+                } else {
                     ; // do nothing
                 }
             }
@@ -519,23 +484,32 @@ public class theRobot extends JFrame {
         else {
             // need to check the adjacent states nad see if they are free
             int newSum = 0;
-            if ((mundo.grid[current_x+1][current_y] == 1) || (mundo.grid[current_x+1][current_y] == 2)) {
+            if (current_x + 1 < mundo.grid.length &&
+                    ((mundo.grid[current_x+1][current_y] == 1) || (mundo.grid[current_x+1][current_y] == 2)))  {
                 newSum += 1;
             }
-            if ((mundo.grid[current_x-1][current_y] == 1) || (mundo.grid[current_x-1][current_y] == 2)) {
+            if (current_x -1 >= 0 &&
+                    ((mundo.grid[current_x-1][current_y] == 1) || (mundo.grid[current_x-1][current_y] == 2))) {
                 newSum += 1;
             }
-            if ((mundo.grid[current_x][current_y+1] == 1) || (mundo.grid[current_x][current_y+1] == 2)) {
+            if (current_y +1 < mundo.grid[0].length &&
+                    ((mundo.grid[current_x][current_y+1] == 1) || (mundo.grid[current_x][current_y+1] == 2))) {
                 newSum += 1;
             }
-            if ((mundo.grid[current_x][current_y-1] == 1) || (mundo.grid[current_x][current_y-1] == 2)) {
+            if (current_y -1 >= 0 &&
+                    ((mundo.grid[current_x][current_y-1] == 1) || (mundo.grid[current_x][current_y-1] == 2))) {
                 newSum += 1;
             }
-            return ((1 - moveProb) / newSum) * probs[current_x][current_y];
+            double newProb = 0;
+            if(newSum == 0) {
+                newProb = (1 - moveProb) * probs[current_x][current_y];
+            }
+            else {
+                newProb = ((1 - moveProb) / newSum) * probs[current_x][current_y];
+            }
+            return newProb;
         }
-
     }
-
     boolean isAdjacent(int grounded_x, int grounded_y, int current_x, int current_y) {
         if (grounded_x == current_x && grounded_y == current_y) {
             return true;
@@ -578,17 +552,25 @@ public class theRobot extends JFrame {
                 col_modifier = -1;
             }
 
+            int new_x = current_x + row_modifier;
+            int new_y = current_y + col_modifier;
+
             char c = sonars.charAt(i);
-            // positive match: both free.
-            if ((mundo.grid[current_x+row_modifier][current_y+col_modifier] == 1) && (c == '0' || c == '3'))  {
-                current_prob = current_prob * sensorAccuracy;
-            }
-            // negative match; both wall
-            if ((mundo.grid[current_x+row_modifier][current_y+col_modifier] == 0) && (c == '1' || c == '2')) {
-                current_prob = current_prob * sensorAccuracy;
-            }
-            else { // if there is a mismatch
-                current_prob = current_prob * (1-sensorAccuracy);
+
+            // protect from out of bounds errors
+            if (new_x >= 0 && new_x < mundo.grid.length && new_y >= 0 && new_y < mundo.grid[0].length) {
+
+                // positive match: both free.
+                if ((mundo.grid[current_x+row_modifier][current_y+col_modifier] == 1) && (c == '0' || c == '3'))  {
+                    current_prob = current_prob * sensorAccuracy;
+                }
+                // negative match; both wall
+                if ((mundo.grid[current_x+row_modifier][current_y+col_modifier] == 0) && (c == '1' || c == '2')) {
+                    current_prob = current_prob * sensorAccuracy;
+                }
+                else { // if there is a mismatch
+                    current_prob = current_prob * (1-sensorAccuracy);
+                }
             }
         }
 
