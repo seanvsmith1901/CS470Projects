@@ -415,7 +415,7 @@ public class theRobot extends JFrame {
         for (int i = 0; i < probs.length; i++) { // should be the same right?
             for (int j = 0; j < probs.length; j++) {
 
-                double b_bar = transitionModel(action, i, j);
+                double b_bar = transitionModel(action, i, j) * probs[i][j];
                 double b = sensorModel(sonars, i, j) * b_bar;
                 new_prob[i][j] = b;
             }
