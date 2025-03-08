@@ -415,32 +415,37 @@ public class theRobot extends JFrame {
         for (int i = 0; i < probs.length; i++) { // should be the same right?
             for (int j = 0; j < probs.length; j++) {
 
-                double b_bar = transitionModel(action, i, j) * probs[i][j];
+                double b_bar = transitionModel(action, i, j, new_prob);
                 double b = sensorModel(sonars, i, j) * b_bar;
                 new_prob[i][j] = b;
             }
         }
+        // surprise surprise we might need to zero out walls and stairs BEFORE we normalize the matrix. MIght be important.
+//        System.out.println("these are the pre probs " + Arrays.deepToString(new_prob));
+        zeroOutStairsAndWalls(new_prob); // zeros out the stairs and walls, as stated.
 
-        probs = normalize2dArray(new_prob); // normalize new probs and update old probs.
+        new_prob = normalize2dArray(new_prob); // normalize new probs and update old probs.
+//        System.out.println("these are the post probs " + Arrays.deepToString(new_prob));
         // we need to update the 2d array probs for this project
-        zeroOutStairsAndWalls(); // zeros out the stairs and walls, as stated.
-        myMaps.updateProbs(probs); // call this function after updating your probabilities so that the
+
+//        System.out.println("these are the walls deleted probs " + Arrays.deepToString(new_prob));
+        myMaps.updateProbs(new_prob); // call this function after updating your probabilities so that the
                                    //  new probabilities will show up in the probability map on the GUI
     }
 
-    void zeroOutStairsAndWalls() { // we can't be in a stair, in a wall or on the goal when we start or stop, so this just zeros it out for us.
+    void zeroOutStairsAndWalls(double[][] new_prob) { // we can't be in a stair, in a wall or on the goal when we start or stop, so this just zeros it out for us.
         for (int y = 0; y < mundo.height; y++) {
             for (int x = 0; x < mundo.width; x++) {
                 if ((mundo.grid[y][x] == 1) || (mundo.grid[y][x] == 2) || (mundo.grid[y][x] == 3)) {
-                    probs[x][y] = 0;
+                    new_prob[x][y] = 0;
                 }
             }
         }
     }
 
     // grounded state shows the state that we are considering and action is the action that has been passed from the client.
-    double transitionModel(int action, int grounded_x, int grounded_y) { // we should just need the action we have taken and the world state
-        double individual_prob = 1.0;
+    double[][] transitionModel(int action, int grounded_x, int grounded_y, double[][] new_prob) { // we should just need the action we have taken and the world state
+        double individual_prob = 0.0;
         int row_modifier = 0;
         int col_modifier = 0;
 
@@ -465,21 +470,19 @@ public class theRobot extends JFrame {
             for (int j = 0; j < probs.length; j++) {
                 if (isAdjacent(grounded_x, grounded_y, i, j))  // only makes sense if we CAN move there.
                 {
-                    individual_prob += calculate_transition(grounded_x, grounded_y, i, j, col_modifier, row_modifier, action); // DEFINIE HOW THIS WORKS AGAIN
-                } else {
-                    ; // do nothing
+                    // this is correctly running 5 times so thats nice.
+                    new_prob[i][j] += calculate_transition(grounded_x, grounded_y, i, j, col_modifier, row_modifier, action); // DEFINIE HOW THIS WORKS AGAIN
                 }
             }
-
         }
-        return individual_prob;
+        return new_prob;
     }
 
     // how do I factor in walls and whatnot. That is what I don't know.
 
     double calculate_transition(int grounded_x, int grounded_y, int current_x, int current_y, int col_modifier, int row_modifier, int action) {
         if ((current_x + col_modifier == grounded_x) && (current_y + row_modifier == grounded_y)) {
-            return moveProb * probs[current_x][current_y];
+            return moveProb * probs[current_x][current_y]; // probs that it moves to where we want it to move
         }
         else {
             // need to check the adjacent states nad see if they are free
