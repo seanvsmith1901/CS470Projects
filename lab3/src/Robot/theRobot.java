@@ -415,7 +415,7 @@ public class theRobot extends JFrame {
         for (int i = 0; i < probs.length; i++) { // should be the same right?
             for (int j = 0; j < probs.length; j++) {
 
-                double b_bar = transitionModel(action, i, j, new_prob);
+                double b_bar = transitionModel(action, i, j);
                 double b = sensorModel(sonars, i, j) * b_bar;
                 new_prob[i][j] = b;
             }
@@ -444,7 +444,7 @@ public class theRobot extends JFrame {
     }
 
     // grounded state shows the state that we are considering and action is the action that has been passed from the client.
-    double[][] transitionModel(int action, int grounded_x, int grounded_y, double[][] new_prob) { // we should just need the action we have taken and the world state
+    double transitionModel(int action, int grounded_x, int grounded_y) { // we should just need the action we have taken and the world state
         double individual_prob = 0.0;
         int row_modifier = 0;
         int col_modifier = 0;
@@ -471,11 +471,11 @@ public class theRobot extends JFrame {
                 if (isAdjacent(grounded_x, grounded_y, i, j))  // only makes sense if we CAN move there.
                 {
                     // this is correctly running 5 times so thats nice.
-                    new_prob[i][j] += calculate_transition(grounded_x, grounded_y, i, j, col_modifier, row_modifier, action); // DEFINIE HOW THIS WORKS AGAIN
+                    individual_prob += calculate_transition(grounded_x, grounded_y, i, j, col_modifier, row_modifier, action); // DEFINIE HOW THIS WORKS AGAIN
                 }
             }
         }
-        return new_prob;
+        return individual_prob;
     }
 
     // how do I factor in walls and whatnot. That is what I don't know.
@@ -564,11 +564,11 @@ public class theRobot extends JFrame {
             if (new_x >= 0 && new_x < mundo.grid.length && new_y >= 0 && new_y < mundo.grid[0].length) {
 
                 // positive match: both free.
-                if ((mundo.grid[current_x+row_modifier][current_y+col_modifier] == 1) && (c == '0' || c == '3'))  {
+                if ((mundo.grid[current_x+row_modifier][current_y+col_modifier] == 0) && (c == '0' || c == '3'))  {
                     current_prob = current_prob * sensorAccuracy;
                 }
                 // negative match; both wall
-                if ((mundo.grid[current_x+row_modifier][current_y+col_modifier] == 0) && (c == '1' || c == '2')) {
+                if ((mundo.grid[current_x+row_modifier][current_y+col_modifier] == 1) && (c == '1' || c == '2')) {
                     current_prob = current_prob * sensorAccuracy;
                 }
                 else { // if there is a mismatch
