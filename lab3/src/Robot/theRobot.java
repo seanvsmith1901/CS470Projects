@@ -414,26 +414,19 @@ public class theRobot extends JFrame {
 
         for (int i = 0; i < probs.length; i++) { // should be the same right?
             for (int j = 0; j < probs.length; j++) {
-
                 double b_bar = transitionModel(action, i, j);
                 double b = sensorModel(sonars, i, j) * b_bar;
                 new_prob[i][j] = b;
             }
         }
-        // surprise surprise we might need to zero out walls and stairs BEFORE we normalize the matrix. MIght be important.
-//        System.out.println("these are the pre probs " + Arrays.deepToString(new_prob));
-        zeroOutStairsAndWalls(new_prob); // zeros out the stairs and walls, as stated.
-
         new_prob = normalize2dArray(new_prob); // normalize new probs and update old probs.
-//        System.out.println("these are the post probs " + Arrays.deepToString(new_prob));
-        // we need to update the 2d array probs for this project
+        new_prob = zeroOutStairsAndWalls(new_prob); // zeros out the stairs and walls, as stated.
 
-//        System.out.println("these are the walls deleted probs " + Arrays.deepToString(new_prob));
         myMaps.updateProbs(new_prob); // call this function after updating your probabilities so that the
                                    //  new probabilities will show up in the probability map on the GUI
     }
 
-    void zeroOutStairsAndWalls(double[][] new_prob) { // we can't be in a stair, in a wall or on the goal when we start or stop, so this just zeros it out for us.
+    double[][] zeroOutStairsAndWalls(double[][] new_prob) { // we can't be in a stair, in a wall or on the goal when we start or stop, so this just zeros it out for us.
         for (int y = 0; y < mundo.height; y++) {
             for (int x = 0; x < mundo.width; x++) {
                 if ((mundo.grid[y][x] == 1) || (mundo.grid[y][x] == 2) || (mundo.grid[y][x] == 3)) {
@@ -441,6 +434,7 @@ public class theRobot extends JFrame {
                 }
             }
         }
+        return new_prob;
     }
 
     // grounded state shows the state that we are considering and action is the action that has been passed from the client.
@@ -448,8 +442,6 @@ public class theRobot extends JFrame {
         double individual_prob = 0.0;
         int row_modifier = 0;
         int col_modifier = 0;
-
-        //TODO: I think? I have it? maybe?
 
         // lets us know how we are trying to modify our grounded positons given our action.
         if (action == 0) {
@@ -465,7 +457,6 @@ public class theRobot extends JFrame {
             col_modifier = -1;
         }
 
-
         for (int i = 0; i < probs.length; i++) {
             for (int j = 0; j < probs.length; j++) {
                 if (isAdjacent(grounded_x, grounded_y, i, j))  // only makes sense if we CAN move there.
@@ -479,7 +470,6 @@ public class theRobot extends JFrame {
     }
 
     // how do I factor in walls and whatnot. That is what I don't know.
-
     double calculate_transition(int grounded_x, int grounded_y, int current_x, int current_y, int col_modifier, int row_modifier, int action) {
         if ((current_x + col_modifier == grounded_x) && (current_y + row_modifier == grounded_y)) {
             return moveProb * probs[current_x][current_y]; // probs that it moves to where we want it to move
@@ -564,11 +554,11 @@ public class theRobot extends JFrame {
             if (new_x >= 0 && new_x < mundo.grid.length && new_y >= 0 && new_y < mundo.grid[0].length) {
 
                 // positive match: both free.
-                if ((mundo.grid[current_x+row_modifier][current_y+col_modifier] == 0) && (c == '0' || c == '3'))  {
+                if ((mundo.grid[current_x+row_modifier][current_y+col_modifier] == 0) && (c == '0' || c == '3' || c == '2'))  {
                     current_prob = current_prob * sensorAccuracy;
                 }
                 // negative match; both wall
-                if ((mundo.grid[current_x+row_modifier][current_y+col_modifier] == 1) && (c == '1' || c == '2')) {
+                if ((mundo.grid[current_x+row_modifier][current_y+col_modifier] == 1) && (c == '1')) {
                     current_prob = current_prob * sensorAccuracy;
                 }
                 else { // if there is a mismatch
@@ -576,7 +566,6 @@ public class theRobot extends JFrame {
                 }
             }
         }
-
         return current_prob;
     }
 
