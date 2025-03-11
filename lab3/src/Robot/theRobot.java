@@ -414,16 +414,20 @@ public class theRobot extends JFrame {
 
         for (int i = 0; i < probs.length; i++) { // should be the same right?
             for (int j = 0; j < probs.length; j++) {
+                System.out.println("index of consideration " + String.valueOf(i) + " " + String.valueOf(j));
                 double b_bar = transitionModel(action, i, j);
+                System.out.println("This is post transition " + b_bar);
                 double b = sensorModel(sonars, i, j) * b_bar;
+                System.out.println("this is the post sensor " + b);
                 new_prob[i][j] = b;
             }
         }
-
+        System.out.println("Here it is before we zero stuff out" + Arrays.deepToString(new_prob));
         new_prob = zeroOutStairsAndWalls(new_prob);
+        System.out.println("Here is is before we noramlize " + Arrays.deepToString(new_prob));
         new_prob = normalize2dArray(new_prob); // normalize new probs and update old probs.
          // zeros out the stairs and walls, as stated.
-
+        System.out.println("These are the new probs " + Arrays.deepToString(new_prob));
         myMaps.updateProbs(new_prob); // call this function after updating your probabilities so that the
                                    //  new probabilities will show up in the probability map on the GUI
     }
@@ -440,90 +444,86 @@ public class theRobot extends JFrame {
     }
 
     // grounded state shows the state that we are considering and action is the action that has been passed from the client.
-    double transitionModel(int action, int grounded_x, int grounded_y) { // we should just need the action we have taken and the world state
+    double transitionModel(int action, int grounded_x, int grounded_y) {
         double individual_prob = 0.0;
         int row_modifier = 0;
         int col_modifier = 0;
 
-        // lets us know how we are trying to modify our grounded positons given our action.
-        if (action == 0) {
+        // Determine how the grounded position changes based on the action
+        if (action == 0) { // Up
             row_modifier = -1;
-        }
-        if (action == 1) {
+        } else if (action == 1) { // Down
             row_modifier = 1;
-        }
-        if (action == 2) {
+        } else if (action == 2) { // Right
             col_modifier = 1;
-        }
-        if (action == 3) {
+        } else if (action == 3) { // Left
             col_modifier = -1;
         }
 
+        // Loop through all positions in the grid to sum the probabilities of the transition
         for (int i = 0; i < probs.length; i++) {
-            for (int j = 0; j < probs.length; j++) {
-                if (isAdjacent(grounded_x, grounded_y, i, j))  // only makes sense if we CAN move there.
-                {
-                    // this is correctly running 5 times so thats nice.
-                    individual_prob += calculate_transition(grounded_x, grounded_y, i, j, col_modifier, row_modifier, action); // DEFINIE HOW THIS WORKS AGAIN
+            for (int j = 0; j < probs[0].length; j++) {
+                if (isAdjacent(grounded_x, grounded_y, i, j)) { // Only consider valid adjacent positions
+                    // Calculate the probability for this specific transition, considering walls/obstacles
+                    individual_prob += calculate_transition(grounded_x, grounded_y, i, j, col_modifier, row_modifier, action);
                 }
             }
         }
+
+        // Now consider the possibility of staying in place if the move is blocked
+        // Add the probability of staying in place (if blocked)
+        double stay_prob = (1 - moveProb) * probs[grounded_x][grounded_y];
+        individual_prob += stay_prob;
+
         return individual_prob;
     }
 
     // how do I factor in walls and whatnot. That is what I don't know.
     double calculate_transition(int grounded_x, int grounded_y, int current_x, int current_y, int col_modifier, int row_modifier, int action) {
         if ((current_x + col_modifier == grounded_x) && (current_y + row_modifier == grounded_y)) {
-            return moveProb * probs[current_x][current_y]; // probs that it moves to where we want it to move
-        }
-        else {
-            // need to check the adjacent states nad see if they are free
-            int newSum = 0;
+            return moveProb * probs[current_x][current_y]; // Prob of moving to the intended position
+        } else {
+            // Checking neighboring cells to handle obstacles and valid transitions
+            int newSum = 1; // Start with 1 to account for the current position
+
+            // Check for walls/obstacles in adjacent cells
             if (current_x + 1 < mundo.grid.length &&
-                    ((mundo.grid[current_x+1][current_y] == 1) || (mundo.grid[current_x+1][current_y] == 2)))  {
-                newSum += 1;
+                    ((mundo.grid[current_x + 1][current_y] == 1) || (mundo.grid[current_x + 1][current_y] == 2))) {
+                newSum += 1; // Wall or obstacle on the right
             }
-            if (current_x -1 >= 0 &&
-                    ((mundo.grid[current_x-1][current_y] == 1) || (mundo.grid[current_x-1][current_y] == 2))) {
-                newSum += 1;
+            if (current_x - 1 >= 0 &&
+                    ((mundo.grid[current_x - 1][current_y] == 1) || (mundo.grid[current_x - 1][current_y] == 2))) {
+                newSum += 1; // Wall or obstacle on the left
             }
-            if (current_y +1 < mundo.grid[0].length &&
-                    ((mundo.grid[current_x][current_y+1] == 1) || (mundo.grid[current_x][current_y+1] == 2))) {
-                newSum += 1;
+            if (current_y + 1 < mundo.grid[0].length &&
+                    ((mundo.grid[current_x][current_y + 1] == 1) || (mundo.grid[current_x][current_y + 1] == 2))) {
+                newSum += 1; // Wall or obstacle below
             }
-            if (current_y -1 >= 0 &&
-                    ((mundo.grid[current_x][current_y-1] == 1) || (mundo.grid[current_x][current_y-1] == 2))) {
-                newSum += 1;
+            if (current_y - 1 >= 0 &&
+                    ((mundo.grid[current_x][current_y - 1] == 1) || (mundo.grid[current_x][current_y - 1] == 2))) {
+                newSum += 1; // Wall or obstacle above
             }
+
             double newProb = 0;
-            if(newSum == 0) {
-                newProb = (1 - moveProb) * probs[current_x][current_y];
+
+            // If no valid neighboring positions, handle that situation gracefully.
+            if (newSum == 0) {
+                return 0.0;  // Or a default value (you can tweak this based on how you want to handle invalid transitions)
             }
-            else {
-                newProb = ((1 - moveProb) / newSum) * probs[current_x][current_y];
-            }
+
+            // Adjust the transition probability based on free adjacent spaces
+            newProb = ((1 - moveProb) / newSum) * probs[current_x][current_y];
+
             return newProb;
         }
     }
     boolean isAdjacent(int grounded_x, int grounded_y, int current_x, int current_y) {
-        if (grounded_x == current_x && grounded_y == current_y) {
-            return true;
-        }
-        if (grounded_x == current_x + 1 && grounded_y == current_y) {
-            return true;
-        }
-        if (grounded_x == current_x - 1 && grounded_y == current_y) {
-            return true;
-        }
-        if (grounded_x == current_x && grounded_y == current_y + 1) {
-            return true;
-        }
-        if (grounded_x == current_x && grounded_y == current_y - 1) {
-            return true;
-        }
-        else { // i could do this inline but I feel that this is easier to read and understand.
-            return false;
-        }
+        // Check if they are adjacent in any direction (up, down, left, right)
+        return (grounded_x == current_x && grounded_y == current_y) ||
+                (grounded_x == current_x + 1 && grounded_y == current_y) || // Right
+                (grounded_x == current_x - 1 && grounded_y == current_y) || // Left
+                (grounded_x == current_x && grounded_y == current_y + 1) || // Down
+                (grounded_x == current_x && grounded_y == current_y - 1);   // Up
     }
 
     double sensorModel(String sonars, int current_x, int current_y) {
