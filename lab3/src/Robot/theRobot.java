@@ -419,8 +419,10 @@ public class theRobot extends JFrame {
                 new_prob[i][j] = b;
             }
         }
+
+        new_prob = zeroOutStairsAndWalls(new_prob);
         new_prob = normalize2dArray(new_prob); // normalize new probs and update old probs.
-        new_prob = zeroOutStairsAndWalls(new_prob); // zeros out the stairs and walls, as stated.
+         // zeros out the stairs and walls, as stated.
 
         myMaps.updateProbs(new_prob); // call this function after updating your probabilities so that the
                                    //  new probabilities will show up in the probability map on the GUI
@@ -572,22 +574,23 @@ public class theRobot extends JFrame {
     double[][] normalize2dArray(double[][] array) {
         int rows = array.length;
         int cols = array[0].length;
-        double[][] normalized = new double[rows][cols];
-        double minVal = array[0][0];
-        double maxVal = array[0][0];
+        double sum = 0.0;
+
+        // Calculate the sum of all probabilities.
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                if (array[i][j] < minVal) {
-                    minVal = array[i][j];
-                }
-                if (array[i][j] > maxVal) {
-                    maxVal = array[i][j];
-                }
+                sum += array[i][j];
             }
         }
+
+        // If the sum is zero, do nothing (to avoid division by zero)
+        if (sum == 0) return array;
+
+        // Normalize each element by dividing by the total sum.
+        double[][] normalized = new double[rows][cols];
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                normalized[i][j] = (array[i][j] - minVal) / (maxVal - minVal);
+                normalized[i][j] = array[i][j] / sum;
             }
         }
         return normalized;
