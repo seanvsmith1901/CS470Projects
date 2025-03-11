@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.Scanner;
 import java.net.*;
+import java.util.ArrayList;
 
 
 // This class draws the probability map and value iteration map that you create to the window
@@ -407,169 +408,118 @@ public class theRobot extends JFrame {
     //       To do this, you should update the 2D-array "probs"
     // Note: sonars is a bit string with four characters, specifying the sonar reading in the direction of North, South, East, and West
     //       For example, the sonar string 1001, specifies that the sonars found a wall in the North and West directions, but not in the South and East directions
-    void updateProbabilities(int action, String sonars) {
+      void updateProbabilities(int action, String sonars) {
+          double[][] new_prob = new double[probs.length][probs[0].length];
 
-        // try to separate them a little more.
-        double[][] new_prob = new double[probs.length][probs[0].length];
+          for (int i = 0; i < probs.length; i++) {
+              for (int j = 0; j < probs[i].length; j++) {
+                  double b_bar = transitionModel(action, i, j);
+                  double b = sensorModel(i, j, sonars) * b_bar;
+                  new_prob[i][j] = b;
+              }
+          }
 
-        for (int i = 0; i < probs.length; i++) { // should be the same right?
-            for (int j = 0; j < probs.length; j++) {
-                System.out.println("index of consideration " + String.valueOf(i) + " " + String.valueOf(j));
-                double b_bar = transitionModel(action, i, j);
-                System.out.println("This is post transition " + b_bar);
-                double b = sensorModel(sonars, i, j) * b_bar;
-                System.out.println("this is the post sensor " + b);
-                new_prob[i][j] = b;
-            }
-        }
-        System.out.println("Here it is before we zero stuff out" + Arrays.deepToString(new_prob));
-        new_prob = zeroOutStairsAndWalls(new_prob);
-        System.out.println("Here is is before we noramlize " + Arrays.deepToString(new_prob));
-        new_prob = normalize2dArray(new_prob); // normalize new probs and update old probs.
-         // zeros out the stairs and walls, as stated.
-        System.out.println("These are the new probs " + Arrays.deepToString(new_prob));
-        myMaps.updateProbs(new_prob); // call this function after updating your probabilities so that the
-                                   //  new probabilities will show up in the probability map on the GUI
-    }
+          // new_prob = zeroOutStairsAndWalls(new_prob);
+          new_prob = normalize2dArray(new_prob);
 
-    double[][] zeroOutStairsAndWalls(double[][] new_prob) { // we can't be in a stair, in a wall or on the goal when we start or stop, so this just zeros it out for us.
+          myMaps.updateProbs(new_prob);
+      }
+
+    double[][] zeroOutStairsAndWalls(double[][] new_prob) {
         for (int y = 0; y < mundo.height; y++) {
             for (int x = 0; x < mundo.width; x++) {
-                if ((mundo.grid[y][x] == 1) || (mundo.grid[y][x] == 2) || (mundo.grid[y][x] == 3)) {
-                    new_prob[x][y] = 0;
+                if (mundo.grid[y][x] == 1 || mundo.grid[y][x] == 2 || mundo.grid[y][x] == 3) {
+                    new_prob[y][x] = 0; // Fix indexing to match row-major order
                 }
             }
         }
         return new_prob;
     }
 
-    // grounded state shows the state that we are considering and action is the action that has been passed from the client.
-    double transitionModel(int action, int grounded_x, int grounded_y) {
-        double individual_prob = 0.0;
-        int row_modifier = 0;
-        int col_modifier = 0;
+    double transitionModel(int x, int y, int action){ // This says what is the probability of robo being in state ij given the input (for all possible states)
+        double prob = 0;
+        double cur_prob = moveProb;
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+//                if (mundo.grid[x+i][y+j] != 0) continue;
+                // for each state, check add the probability that it went the right way plus the prob that if it went the wrong way
+                // that it is there
+                for (int act = 0; act < 5; act++) {
 
-        // Determine how the grounded position changes based on the action
-        if (action == 0) { // Up
-            row_modifier = -1;
-        } else if (action == 1) { // Down
-            row_modifier = 1;
-        } else if (action == 2) { // Right
-            col_modifier = 1;
-        } else if (action == 3) { // Left
-            col_modifier = -1;
-        }
-
-        // Loop through all positions in the grid to sum the probabilities of the transition
-        for (int i = 0; i < probs.length; i++) {
-            for (int j = 0; j < probs[0].length; j++) {
-                if (isAdjacent(grounded_x, grounded_y, i, j)) { // Only consider valid adjacent positions
-                    // Calculate the probability for this specific transition, considering walls/obstacles
-                    individual_prob += calculate_transition(grounded_x, grounded_y, i, j, col_modifier, row_modifier, action);
+                    if (act == action) {
+                        cur_prob = moveProb;
+                    }else{
+                        cur_prob = (1.0-moveProb)/4.0;
+                    }
+                    if (final_pos(x+i, y+j, act).get(0) == x && final_pos(x+i, y+j, act).get(1) == y) { // fix this if statement
+                        prob += cur_prob * probs[x+i][y+j];
+                    }
                 }
             }
         }
-
-        // Now consider the possibility of staying in place if the move is blocked
-        // Add the probability of staying in place (if blocked)
-        double stay_prob = (1 - moveProb) * probs[grounded_x][grounded_y];
-        individual_prob += stay_prob;
-
-        return individual_prob;
+        return prob;
     }
 
-    // how do I factor in walls and whatnot. That is what I don't know.
-    double calculate_transition(int grounded_x, int grounded_y, int current_x, int current_y, int col_modifier, int row_modifier, int action) {
-        if ((current_x + col_modifier == grounded_x) && (current_y + row_modifier == grounded_y)) {
-            return moveProb * probs[current_x][current_y]; // Prob of moving to the intended position
-        } else {
-            // Checking neighboring cells to handle obstacles and valid transitions
-            int newSum = 1; // Start with 1 to account for the current position
+    ArrayList<Integer> final_pos(int x, int y, int action) {
+        ArrayList<Integer> return_pos = new ArrayList<>(2);
+        return_pos.add(x);
+        return_pos.add(y); // Store the final position
 
-            // Check for walls/obstacles in adjacent cells
-            if (current_x + 1 < mundo.grid.length &&
-                    ((mundo.grid[current_x + 1][current_y] == 1) || (mundo.grid[current_x + 1][current_y] == 2))) {
-                newSum += 1; // Wall or obstacle on the right
+        if (action == 0) { // Move North
+            if (y - 1 >= 0 && mundo.grid[x][y - 1] == 0) {
+                return_pos.set(1, y - 1);
             }
-            if (current_x - 1 >= 0 &&
-                    ((mundo.grid[current_x - 1][current_y] == 1) || (mundo.grid[current_x - 1][current_y] == 2))) {
-                newSum += 1; // Wall or obstacle on the left
+        } else if (action == 1) { // Move South
+            if (y + 1 < mundo.height && mundo.grid[x][y + 1] == 0) {
+                return_pos.set(1, y + 1);
             }
-            if (current_y + 1 < mundo.grid[0].length &&
-                    ((mundo.grid[current_x][current_y + 1] == 1) || (mundo.grid[current_x][current_y + 1] == 2))) {
-                newSum += 1; // Wall or obstacle below
+        } else if (action == 2) { // Move East (Fixed incorrect bound check)
+            if (x + 1 < mundo.width && mundo.grid[x + 1][y] == 0) {
+                return_pos.set(0, x + 1);
             }
-            if (current_y - 1 >= 0 &&
-                    ((mundo.grid[current_x][current_y - 1] == 1) || (mundo.grid[current_x][current_y - 1] == 2))) {
-                newSum += 1; // Wall or obstacle above
-            }
-
-            double newProb = 0;
-
-            // If no valid neighboring positions, handle that situation gracefully.
-            if (newSum == 0) {
-                return 0.0;  // Or a default value (you can tweak this based on how you want to handle invalid transitions)
-            }
-
-            // Adjust the transition probability based on free adjacent spaces
-            newProb = ((1 - moveProb) / newSum) * probs[current_x][current_y];
-
-            return newProb;
-        }
-    }
-    boolean isAdjacent(int grounded_x, int grounded_y, int current_x, int current_y) {
-        // Check if they are adjacent in any direction (up, down, left, right)
-        return (grounded_x == current_x && grounded_y == current_y) ||
-                (grounded_x == current_x + 1 && grounded_y == current_y) || // Right
-                (grounded_x == current_x - 1 && grounded_y == current_y) || // Left
-                (grounded_x == current_x && grounded_y == current_y + 1) || // Down
-                (grounded_x == current_x && grounded_y == current_y - 1);   // Up
-    }
-
-    double sensorModel(String sonars, int current_x, int current_y) {
-        double current_prob = 1;
-
-        for (int i = 0; i < sonars.length(); i++) {
-
-            int row_modifier = 0;
-            int col_modifier = 0;
-
-            if (i == 0) {
-                row_modifier = -1;
-            }
-            if (i == 1) {
-                row_modifier = 1;
-            }
-            if (i == 2) {
-                col_modifier = 1;
-            }
-            if (i == 3) {
-                col_modifier = -1;
-            }
-
-            int new_x = current_x + row_modifier;
-            int new_y = current_y + col_modifier;
-
-            char c = sonars.charAt(i);
-
-            // protect from out of bounds errors
-            if (new_x >= 0 && new_x < mundo.grid.length && new_y >= 0 && new_y < mundo.grid[0].length) {
-
-                // positive match: both free.
-                if ((mundo.grid[current_x+row_modifier][current_y+col_modifier] == 0) && (c == '0' || c == '3' || c == '2'))  {
-                    current_prob = current_prob * sensorAccuracy;
-                }
-                // negative match; both wall
-                if ((mundo.grid[current_x+row_modifier][current_y+col_modifier] == 1) && (c == '1')) {
-                    current_prob = current_prob * sensorAccuracy;
-                }
-                else { // if there is a mismatch
-                    current_prob = current_prob * (1-sensorAccuracy);
-                }
+        } else if (action == 3) { // Move West
+            if (x - 1 >= 0 && mundo.grid[x - 1][y] == 0) {
+                return_pos.set(0, x - 1);
             }
         }
-        return current_prob;
+
+        return return_pos;
     }
+
+    double sensorModel(int x,int y, String sonars){ // NSEW
+        double prob = 1.0;
+        // use sensorProb
+        Character North = sonars.charAt(0);
+        Character South = sonars.charAt(1);
+        Character East = sonars.charAt(2);
+        Character West = sonars.charAt(3);
+        if ((mundo.grid[x][y-1] == 0 && North == '0') || (mundo.grid[x][y-1] == 1 && North == '1') ){
+            prob = sensorAccuracy;
+        }else{
+            prob= 1.0 - sensorAccuracy;
+        }
+
+        if ((mundo.grid[x][y+1] == 0 && South =='0') || (mundo.grid[x][y+1] == 1 && South =='1')){
+            prob = sensorAccuracy;
+        } else{
+            prob= 1.0 - sensorAccuracy;
+        }
+
+        if ((mundo.grid[x+1][y] == 0 && East == '0') || (mundo.grid[x+1][y] == 1 && East == '1')){
+            prob = sensorAccuracy;
+        } else{
+            prob= 1.0 - sensorAccuracy;
+        }
+
+        if ((mundo.grid[x-1][y] == 0 && West == '0') || (mundo.grid[x-1][y] == 1 && West == '1')){
+            prob = sensorAccuracy;
+        } else{
+            prob= 1.0 - sensorAccuracy;
+        }
+
+        return prob;
+    }
+
 
     double[][] normalize2dArray(double[][] array) {
         int rows = array.length;
