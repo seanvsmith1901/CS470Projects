@@ -11,7 +11,7 @@ epsilon = 1e-6 # not put in the spec, but seems necessary for convergence. at le
 states = [(health, age) for health in states_1 for age in states_2] # creates cartesian product bc I am lazy
 state_index = {state: idx for idx, state in enumerate(states)} # dictionary time (faster)
 
-def run_fetcher(df, gamma): # our data frame of choice (30 by default)
+def run_fetcher(dfe, dfy, gamma): # our data frame of choice (30 by default)
     # to access a data frame at an intended position, use df.loc["key1", "key2"] (in row, column order)
     global states
     global state_index
@@ -27,17 +27,28 @@ def run_fetcher(df, gamma): # our data frame of choice (30 by default)
             old_value = V[state_index]
 
             future_values = []
-            for new_state in states:
-                new_health, new_age = new_state
-                transition_prob = df.loc[health, new_health]
-                future_value = transition_prob * (reward + gamma * V[state_index[new_state]])
-                future_values.append(future_value)
+            for action in actions:
+                if action == "surgery":
+                    df = dfy
+                else:
+                    df = dfe
+                action_future_values = []
+                for new_state in states:
+                    new_health, new_age = new_state
+                    transition_prob = df.loc[health, new_health]
+                    new_state_index = state_index[new_state]
+                    future_value = transition_prob * (reward + gamma * V[new_state_index])
+                    action_future_values.append(future_value)
+
+                future_values.append(np.sum(action_future_values))
 
             new_value = max(future_values)
             V[state_index] = new_value
 
+            # check for convergence
             if abs(new_value - old_value) > epsilon:
                 converged = False
+
 
     print(V)
 
@@ -53,8 +64,8 @@ def reward_function(state):
 
 
 if __name__ == '__main__':
-    df30 = pd.read_csv("60-65 - surveilence.csv")
-    df60 = pd.read_csv("60-65 - surgery.csv")
+    df30e = pd.read_csv("60-65 - surveilence.csv")
+    df30y = pd.read_csv("60-65 - surgery.csv")
     gamma = gamma1
     #gamma = gamma2
-    run_fetcher(df30, gamma)
+    run_fetcher(df30e, df30y, gamma)
