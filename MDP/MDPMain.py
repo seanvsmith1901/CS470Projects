@@ -40,8 +40,10 @@ def run_fetcher(age, gamma): # our data frame of choice (30 by default)
                 V[state_index] = -100 # fixed reward here. will it help? no clue.
                 continue # nothing to calcualte here.
 
-            if age == 120:
-                next_age = 120
+            if age == 35:
+                next_age = 35
+            elif age == 65:
+                next_age = 65
             else:
                 next_age = age + 1
 
@@ -70,8 +72,6 @@ def run_fetcher(age, gamma): # our data frame of choice (30 by default)
 
                     transition_prob = df.loc[health, new_health]
                     if transition_prob > 0:
-                        new_state_index = state_indexs[new_state]
-                        #print("and here is the transition prob ", transition_prob)
                         new_state_index = state_indexs[new_state]
                         future_value = transition_prob * (reward + gamma * V[new_state_index])
                         #print("here is the expected future value ", future_value)

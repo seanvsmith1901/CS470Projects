@@ -4,6 +4,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+import matplotlib.patches as mpatches  # Import for custom legend
 
 def display_plot():
     df = pd.read_csv("VFor35.0.7.csv")
@@ -17,6 +18,7 @@ def display_plot():
     # Create the heatmap
     plt.figure(figsize=(12, 8))
     sns.heatmap(df_numeric, cmap=custom_map, linewidths=0.5, cbar=False)
+
     plt.title("optimal policy heatmap")
     plt.xlabel("Aneurysm Size")
     plt.ylabel("Age")
