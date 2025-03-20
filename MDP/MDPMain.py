@@ -9,21 +9,31 @@ gamma1 = 0.9
 gamma2 = 0.7 # thats LOW.
 epsilon = 1e-6 # not put in the spec, but seems necessary for convergence. at least in the examples I am looking at.
 states = [(health, age) for health in states_1 for age in states_2] # creates cartesian product bc I am lazy
-state_index = {state: idx for idx, state in enumerate(states)} # dictionary time (faster)
+state_indexs = {state: idx for idx, state in enumerate(states)} # dictionary time (faster)
 
 def run_fetcher(dfe, dfy, gamma): # our data frame of choice (30 by default)
     # to access a data frame at an intended position, use df.loc["key1", "key2"] (in row, column order)
     global states
-    global state_index
+    global state_indexs
 
     V = np.zeros(len(states)) # so that way we have the outcome of every possible policy
     converged = False
-    while not converged:
+    while not converged: # make sure that you force transition if you can!!
         converged = True
         for state in states:
             health, age = state
+            state_index = state_indexs[state]
+            if health == "Dead":
+                V[state_index] = -100 # fixed reward here. will it help? no clue.
+                continue # nothing to calcualte here.
+
+            if age == 120:
+                next_age = 120
+            else:
+                next_age = age + 1
+
             reward = reward_function(state)
-            state_index = state_index[state]
+            state_index = state_indexs[state]
             old_value = V[state_index]
 
             future_values = []
@@ -33,11 +43,19 @@ def run_fetcher(dfe, dfy, gamma): # our data frame of choice (30 by default)
                 else:
                     df = dfe
                 action_future_values = []
-                for new_state in states:
-                    new_health, new_age = new_state
+                for new_health in states_1:
+                    if new_health == "Dead":
+                        new_state = ("Dead", age)
+                    else:
+                        new_state = (new_health, next_age) # force the transition
+
+
+
                     transition_prob = df.loc[health, new_health]
-                    new_state_index = state_index[new_state]
+                    #print("and here is the transition prob ", transition_prob)
+                    new_state_index = state_indexs[new_state]
                     future_value = transition_prob * (reward + gamma * V[new_state_index])
+                    #print("here is the expected future value ", future_value)
                     action_future_values.append(future_value)
 
                 future_values.append(np.sum(action_future_values))
@@ -47,25 +65,36 @@ def run_fetcher(dfe, dfy, gamma): # our data frame of choice (30 by default)
 
             # check for convergence
             if abs(new_value - old_value) > epsilon:
+                print("This is how close we were ", new_value - old_value)
                 converged = False
 
 
     print(V)
+    save_values_to_cvs(V)
 
 def reward_function(state):
     health = state[0]
     age = state[1]
-    if health == "no_aneurysm":
+    if health == "no AAA":
         return 100 - age
-    elif health == "death":
+    elif health == "Dead":
         return -100
     else:
         return 0.9 * (100 - age)
 
+def save_values_to_cvs(V, filename="VFor65"):
+    df = pd.DataFrame({
+        "Health" : [state[0] for state in states],
+        "Age" : [state[1] for state in states],
+        "Value" : V
+    })
+    df.to_csv(filename, index=False)
+
+
 
 if __name__ == '__main__':
-    df30e = pd.read_csv("60-65 - surveilence.csv")
-    df30y = pd.read_csv("60-65 - surgery.csv")
+    df30e = pd.read_csv("60-65 - surveilence.csv", index_col=0)
+    df30y = pd.read_csv("60-65 - surgery.csv", index_col=0)
     gamma = gamma1
     #gamma = gamma2
     run_fetcher(df30e, df30y, gamma)
