@@ -7,7 +7,7 @@ from matplotlib.colors import ListedColormap
 import matplotlib.patches as mpatches  # Import for custom legend
 
 def display_plot():
-    df = pd.read_csv("VFor35.0.7.csv")
+    df = pd.read_csv("VFor65.0.9.csv")
     # pivot to make it easier for heatmaps, also drop the dead column.
     df_policy = df[(df["Health"] != "Dead") & (df["Health"] != "no AAA")].pivot(index="Age", columns="Health", values="Best Action")
 

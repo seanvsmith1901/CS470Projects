@@ -125,7 +125,7 @@ def next_anuyerisn_size(current_health):
     else:
         return current_health
 
-def save_values_to_cvs(V, policy, states, filename="VFor35.0.7.csv"):
+def save_values_to_cvs(V, policy, states, filename="VFor65.0.9.csv"):
     df = pd.DataFrame({
         "Health" : [state[0] for state in states],
         "Age" : [state[1] for state in states],
@@ -143,4 +143,4 @@ if __name__ == '__main__':
     gamma2 = 0.7  # thats LOW.
 
 
-    run_fetcher(30, gamma1)
+    run_fetcher(60, gamma1)
