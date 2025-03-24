@@ -1,6 +1,7 @@
 # literally no clue what to pu there.
 import pandas as pd
 import numpy as np
+from past.types import oldstr
 
 states_1 = ["Dead", "no AAA", "<30 mm", "30-35 mm", "35-40 mm", "40-45 mm", "45-50 mm", "50-55 mm", "55-60 mm", "60-65 mm", "65-70 mm", "70-75 mm",  "75-80 mm", "> 80 mm"]
 
@@ -37,69 +38,71 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
     converged = False
     while not converged: # make sure that you force transition if you can!!
         converged = True
+        # so first lets find the reward
         for state in states:
-            health, age = state
+
+            best_value = float("-inf")
+            best_action = None
+
             state_index = state_indexes[state]
-            if health == "Dead":
-                V[state_index] = -100 # fixed reward here. will it help? no clue.
-                continue # nothing to calcualte here.
-
-            if age == 35:
-                next_age = 35
-            elif age == 65:
-                next_age = 65
-            else:
-                next_age = age + 1
-
-            next_health = next_anuyerisn_size(health)
-
-            reward = reward_function(state) # this is the reward where I am right now.
             old_value = V[state_index]
 
-            action_values = []
+            reward = reward_function(state)
 
-            for action in actions:
-                action_value = []
-                if action == "surgery":
-                    df = dfy
-                else:
-                    df = dfe
-                for new_health in states_1:
-                    if new_health == "Dead":
-                        new_state = ("Dead", age)
-                    else:
-                        if new_health == health or new_health == next_health:
-                            new_state = (new_health, next_age)
-                        else:
-                            continue
+            for action in actions: # now lets consider every possible action
+                df = dfy if action == "surgery" else dfe # to get the transition probs
 
-                    transition_prob = df.loc[health, new_health] # how likely we are to transition to a new state
-                    if transition_prob > 0: # if its possible to occur
-                        new_state_index = state_indexes[new_state] # find where the new state exists
-                        future_value = transition_prob * (reward + (gamma * V[new_state_index]))
-                        action_value.append(future_value)
+                action_value = 0 # we start out with 0, bc thats the possible action payoff rn.
 
-                if action_value:
-                    best_action_value = max(action_value)
-                    action_values.append(best_action_value)
-                else:
-                    action_values.append(float("-inf"))
+                for new_state in transition_states(state): # for every possible state we could go through
+                    new_state_index = state_indexes[new_state] # get the new index
+                    transition_probability = df.loc[state[0], new_state[0]] # get the transition probability based on the action and state
+                    new_value = reward + (gamma * (transition_probability * V[new_state_index])) # get the new value
+                    action_value += new_value # sum it up so we can look into the future and see which is better
 
-            best_value = max(action_values)
-            best_action = actions[action_values.index(best_value)]
+                if action_value > best_value: # if our current value is better than anything else we have calcualted
+                    best_value = action_value # set the stuff appropriately
+                    best_action = action
 
-            #print(f"State: {state}, Surgery Value: {action_values[0]}, Surveillance Value: {action_values[1]}")
-
-            V[state_index] = best_value
+            V[state_index] = best_value # put our best foot forward.
             policy[state] = best_action
 
             # check for convergence
             if abs(best_value - old_value) > epsilon:
-                converged = False # this breaks
+                converged = False  # this breaks
 
 
     print(V)
     save_values_to_cvs(V, policy, states, passed_age, gamma)
+
+def transition_states(state): # returns all the possible states from our current state
+    possible_healths = ["Dead", "no AAA", "Same_size", "Size + 1"]
+
+    new_states = []
+    health, age = state
+
+    if age == 35:
+        new_age = 35
+    elif age == 65:
+        new_age = 65
+    else:
+        new_age = age + 1
+    next_health = next_aneurysm_size(health)
+
+    for new_health in possible_healths: # creates all of the possible new states
+        # Do I need to disallow double dipping? I think its fine, we just need to consider the chances of it happening
+        if new_health == "Dead":
+            new_states.append(("Dead", new_age))
+        if new_health == "No AAA":
+            new_states.append(("No AAA", new_age))
+        if new_health == "Same_size":
+            new_states.append((health, new_age))
+        if new_health == "Size + 1":
+            new_states.append((next_health, new_age))
+
+    return new_states
+
+
 
 def reward_function(state):
     health = state[0]
@@ -112,26 +115,26 @@ def reward_function(state):
         return 0.9 * (100 - age)
 
 
-def next_anuyerisn_size(current_health):
+def next_aneurysm_size(current_health):
     transitions = { # allows for growth to grow by one stage, tops.
-        "no AAA": ["no AAA", "<30 mm"],
-        "<30 mm": ["<30 mm", "30-35 mm"],
-        "30-35 mm": ["30-35 mm", "35-40 mm"],
-        "35-40 mm": ["35-40 mm", "40-45 mm"],
-        "40-45 mm": ["40-45 mm", "45-50 mm"],
-        "45-50 mm": ["45-50 mm", "50-55 mm"],
-        "50-55 mm": ["50-55 mm", "55-60 mm"],
-        "55-60 mm": ["55-60 mm", "60-65 mm"],
-        "60-65 mm": ["60-65 mm", "65-70 mm"],
-        "65-70 mm": ["65-70 mm", "70-75 mm"],
-        "70-75 mm": ["70-75 mm", "75-80 mm"],
-        "75-80 mm": ["75-80 mm", "> 80 mm"],
-        "> 80 mm": ["> 80 mm", "> 80 mm"],  # we can't grow any higher
+        "no AAA": "<30 mm",
+        "<30 mm": "30-35 mm",
+        "30-35 mm": "35-40 mm",
+        "35-40 mm": "40-45 mm",
+        "40-45 mm": "45-50 mm",
+        "45-50 mm": "50-55 mm",
+        "50-55 mm": "55-60 mm",
+        "55-60 mm": "60-65 mm",
+        "60-65 mm": "65-70 mm",
+        "65-70 mm": "70-75 mm",
+        "70-75 mm": "75-80 mm",
+        "75-80 mm": "> 80 mm",
+        "> 80 mm": "> 80 mm",  # we can't grow any higher
     }
     if current_health in transitions:
-        return transitions[current_health][1]
+        return transitions[current_health]
     else:
-        return current_health
+        return current_health  # in case death or whatever.
 
 def save_values_to_cvs(V, policy, states, age, gamma):
     print("this is the age", age)

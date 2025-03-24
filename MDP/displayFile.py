@@ -7,7 +7,7 @@ from matplotlib.colors import ListedColormap
 import matplotlib.patches as mpatches  # Import for custom legend
 
 def display_plot():
-    possible_dfs = ["VFor65.0.9.csv", "VFor65.0.7.csv", "VFor35.0.9.csv", "VFor35.0.7.csv"]
+    possible_dfs = ["VFor60.0.9.csv", "VFor60.0.7.csv", "VFor30.0.9.csv", "VFor30.0.7.csv"]
     for df_file in possible_dfs:
         df = pd.read_csv(df_file)
 
