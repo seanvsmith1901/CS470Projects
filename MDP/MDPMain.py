@@ -44,15 +44,6 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
                 V[state_index] = -100 # fixed reward here. will it help? no clue.
                 continue # nothing to calcualte here.
 
-            if age == 35:
-                next_age = 35
-            elif age == 65:
-                next_age = 65
-            else:
-                next_age = age + 1
-
-            next_health = next_anuyerisn_size(health)
-
             reward = reward_function(state) # this is the reward where I am right now.
             old_value = V[state_index]
 
@@ -64,14 +55,10 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
                     df = dfy
                 else:
                     df = dfe
-                for new_health in states_1:
-                    if new_health == "Dead":
-                        new_state = ("Dead", age)
-                    else:
-                        if new_health == health or new_health == next_health:
-                            new_state = (new_health, next_age)
-                        else:
-                            continue
+
+                new_states = transition_states(state)
+                for new_state in new_states:
+                    new_health = state[0]
 
                     transition_prob = df.loc[health, new_health] # how likely we are to transition to a new state
                     if transition_prob > 0: # if its possible to occur
@@ -87,8 +74,6 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
 
             best_value = max(action_values)
             best_action = actions[action_values.index(best_value)]
-
-            #print(f"State: {state}, Surgery Value: {action_values[0]}, Surveillance Value: {action_values[1]}")
 
             V[state_index] = best_value
             policy[state] = best_action
@@ -112,26 +97,53 @@ def reward_function(state):
         return 0.9 * (100 - age)
 
 
-def next_anuyerisn_size(current_health):
+def next_aneurysm_size(current_health):
     transitions = { # allows for growth to grow by one stage, tops.
-        "no AAA": ["no AAA", "<30 mm"],
-        "<30 mm": ["<30 mm", "30-35 mm"],
-        "30-35 mm": ["30-35 mm", "35-40 mm"],
-        "35-40 mm": ["35-40 mm", "40-45 mm"],
-        "40-45 mm": ["40-45 mm", "45-50 mm"],
-        "45-50 mm": ["45-50 mm", "50-55 mm"],
-        "50-55 mm": ["50-55 mm", "55-60 mm"],
-        "55-60 mm": ["55-60 mm", "60-65 mm"],
-        "60-65 mm": ["60-65 mm", "65-70 mm"],
-        "65-70 mm": ["65-70 mm", "70-75 mm"],
-        "70-75 mm": ["70-75 mm", "75-80 mm"],
-        "75-80 mm": ["75-80 mm", "> 80 mm"],
-        "> 80 mm": ["> 80 mm", "> 80 mm"],  # we can't grow any higher
+        "no AAA": "<30 mm",
+        "<30 mm": "30-35 mm",
+        "30-35 mm": "35-40 mm",
+        "35-40 mm": "40-45 mm",
+        "40-45 mm": "45-50 mm",
+        "45-50 mm": "50-55 mm",
+        "50-55 mm": "55-60 mm",
+        "55-60 mm": "60-65 mm",
+        "60-65 mm": "65-70 mm",
+        "65-70 mm": "70-75 mm",
+        "70-75 mm": "75-80 mm",
+        "75-80 mm": "> 80 mm",
+        "> 80 mm": "> 80 mm",  # we can't grow any higher
     }
     if current_health in transitions:
-        return transitions[current_health][1]
+        return transitions[current_health]
     else:
-        return current_health
+        return current_health  # in case death or whatever.
+
+def transition_states(state): # returns all the possible states from our current state
+    possible_healths = ["Dead", "no AAA", "Same_size", "Size + 1"]
+
+    new_states = []
+    health, age = state
+
+    if age == 35:
+        new_age = 35
+    elif age == 65:
+        new_age = 65
+    else:
+        new_age = age + 1
+    next_health = next_aneurysm_size(health)
+
+    for new_health in possible_healths: # creates all of the possible new states
+        # Do I need to disallow double dipping? I think its fine, we just need to consider the chances of it happening
+        if new_health == "Dead":
+            new_states.append(("Dead", new_age))
+        if new_health == "no AAA":
+            new_states.append(("no AAA", new_age))
+        if new_health == "Same_size":
+            new_states.append((health, new_age))
+        if new_health == "Size + 1":
+            new_states.append((next_health, new_age))
+
+    return new_states
 
 def save_values_to_cvs(V, policy, states, age, gamma):
     print("this is the age", age)

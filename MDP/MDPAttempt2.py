@@ -41,29 +41,34 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
         # so first lets find the reward
         for state in states:
 
-            best_value = float("-inf")
-            best_action = None
-
             state_index = state_indexes[state]
             old_value = V[state_index]
 
             reward = reward_function(state)
 
+            action_values = []
+
             for action in actions: # now lets consider every possible action
                 df = dfy if action == "surgery" else dfe # to get the transition probs
 
-                action_value = 0 # we start out with 0, bc thats the possible action payoff rn.
+                new_states = transition_states(state)
+                print("here is the state ", state, " and the new states ", new_states)
+                for new_state in new_states: # for every possible state we could go through
 
-                for new_state in transition_states(state): # for every possible state we could go through
                     new_state_index = state_indexes[new_state] # get the new index
                     transition_probability = df.loc[state[0], new_state[0]] # get the transition probability based on the action and state
                     new_value = reward + (gamma * (transition_probability * V[new_state_index])) # get the new value
-                    action_value += new_value # sum it up so we can look into the future and see which is better
+                    action_values.append(new_value) # sum it up so we can look into the future and see which is better
 
-                if action_value > best_value: # if our current value is better than anything else we have calcualted
-                    best_value = action_value # set the stuff appropriately
-                    best_action = action
+                if action_values:
+                    best_action_value = max(action_values)
+                    action_values.append(best_action_value)
+                else:
+                    action_values.append(float("-inf"))
 
+
+            best_value = max(action_values)
+            best_action = actions[action_values.index(best_value)]
             V[state_index] = best_value # put our best foot forward.
             policy[state] = best_action
 
@@ -93,8 +98,8 @@ def transition_states(state): # returns all the possible states from our current
         # Do I need to disallow double dipping? I think its fine, we just need to consider the chances of it happening
         if new_health == "Dead":
             new_states.append(("Dead", new_age))
-        if new_health == "No AAA":
-            new_states.append(("No AAA", new_age))
+        if new_health == "no AAA":
+            new_states.append(("no AAA", new_age))
         if new_health == "Same_size":
             new_states.append((health, new_age))
         if new_health == "Size + 1":
