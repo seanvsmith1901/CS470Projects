@@ -45,37 +45,36 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
             if health == "Dead":
                 V[state_index] = -100 # fixed reward here. will it help? no clue.
                 continue # nothing to calcualte here.
+            if health == "no AAA":
+                V[state_index] = reward_function(state)
+                policy[state] = "surveillance"
+                continue
 
             reward = reward_function(state) # this is the reward where I am right now.
             old_value = V[state_index]
 
-            action_values = []
+            best_value = float("-inf")
+            best_action = None
 
             for action in actions:
-                action_value = []
+                future_action_value = 0
                 if action == "surgery":
-                    df = dfy
-                else:
                     df = dfe
+                else:
+                    df = dfy
 
                 new_states = transition_states(state)
                 for new_state in new_states:
-                    new_health = new_state[0]
-
+                    new_health, new_age = new_state
                     transition_prob = df.loc[health, new_health] # how likely we are to transition to a new state
                     if transition_prob > 0: # if its possible to occur
                         new_state_index = state_indexes[new_state] # find where the new state exists
                         future_value = transition_prob * (reward + (gamma * V[new_state_index]))
-                        action_value.append(future_value)
+                        future_action_value += future_value
 
-                if action_value:
-                    best_action_value = max(action_value)
-                    action_values.append(best_action_value)
-                else:
-                    action_values.append(float("-inf"))
-
-            best_value = max(action_values)
-            best_action = actions[action_values.index(best_value)]
+                if future_action_value > best_value:
+                    best_value = future_action_value
+                    best_action = action
 
             V[state_index] = best_value
             policy[state] = best_action
@@ -120,6 +119,16 @@ def next_aneurysm_size(current_health):
     else:
         return current_health  # in case death or whatever.
 
+def get_new_age(state):
+    _, age = state
+    if age == 35:
+        new_age = 35
+    elif age == 65:
+        new_age = 65
+    else:
+        new_age = age + 1
+    return new_age
+
 def transition_states(state): # returns all the possible states from our current state
     possible_healths = ["Dead", "no AAA", "Same_size", "Size + 1"]
 
@@ -148,7 +157,7 @@ def transition_states(state): # returns all the possible states from our current
         if new_health == "Size + 1":
             new_states.append((next_health, new_age))
 
-    #new_states = remove_duplicate_tuples(new_states) # exactly what it says on the tin.
+    new_states = remove_duplicate_tuples(new_states) # exactly what it says on the tin.
     return new_states
 
 def remove_duplicate_tuples(tuple_list):
@@ -176,10 +185,10 @@ def save_values_to_cvs(V, policy, states, age, gamma):
 
 
 if __name__ == '__main__':
-    # ages = [30, 60]
-    # gammas = [0.9, 0.7]
-    ages = [60] # testing specific edgecase.
-    gammas = [0.9]
+    ages = [30, 60]
+    gammas = [0.9, 0.7]
+    # ages = [60] # testing specific edgecase.
+    # gammas = [0.9]
     for age in ages:
         for gamma in gammas:
             run_fetcher(age, gamma)
