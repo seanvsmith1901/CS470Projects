@@ -39,6 +39,8 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
         converged = True
         for state in states:
             health, age = state
+            if health == "<30 mm" and age == 30:
+                print("Walk through this one!")
             state_index = state_indexes[state]
             if health == "Dead":
                 V[state_index] = -100 # fixed reward here. will it help? no clue.
@@ -58,7 +60,7 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
 
                 new_states = transition_states(state)
                 for new_state in new_states:
-                    new_health = state[0]
+                    new_health = new_state[0]
 
                     transition_prob = df.loc[health, new_health] # how likely we are to transition to a new state
                     if transition_prob > 0: # if its possible to occur
@@ -123,6 +125,8 @@ def transition_states(state): # returns all the possible states from our current
 
     new_states = []
     health, age = state
+    if health == "> 80 mm":
+        print("This should be the duplicate here. make sure to remove it")
 
     if age == 35:
         new_age = 35
@@ -143,7 +147,18 @@ def transition_states(state): # returns all the possible states from our current
         if new_health == "Size + 1":
             new_states.append((next_health, new_age))
 
+    new_states = remove_duplicate_tuples(new_states) # exactly what it says on the tin.
     return new_states
+
+def remove_duplicate_tuples(tuple_list):
+    seen = set()
+    new_list = []
+    for tup in tuple_list:
+        if tuple(tup) not in seen:
+            new_list.append(tup)
+            seen.add(tuple(tup))
+    return new_list
+
 
 def save_values_to_cvs(V, policy, states, age, gamma):
     print("this is the age", age)
