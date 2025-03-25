@@ -15,71 +15,71 @@ no AAA,65,35.0,surveillance
 <30 mm,61,60.60600000000001,surveillance
 <30 mm,62,58.86900000000001,surveillance
 <30 mm,63,57.132000000000005,surveillance
-<30 mm,64,55.394999999999996,surveillance
+<30 mm,64,55.395,surveillance
 <30 mm,65,54.495000000000005,surveillance
-30-35 mm,60,59.840999999999994,surveillance
-30-35 mm,61,58.12200000000001,surveillance
+30-35 mm,60,59.841,surveillance
+30-35 mm,61,58.122,surveillance
 30-35 mm,62,56.403000000000006,surveillance
 30-35 mm,63,54.684000000000005,surveillance
 30-35 mm,64,52.965,surveillance
-30-35 mm,65,52.065000000000005,surveillance
+30-35 mm,65,52.065,surveillance
 35-40 mm,60,57.339,surveillance
-35-40 mm,61,55.63800000000001,surveillance
+35-40 mm,61,55.638000000000005,surveillance
 35-40 mm,62,53.937000000000005,surveillance
 35-40 mm,63,52.236000000000004,surveillance
-35-40 mm,64,50.535000000000004,surveillance
-35-40 mm,65,49.635,surveillance
-40-45 mm,60,54.83699999999999,surveillance
-40-45 mm,61,53.15400000000001,surveillance
+35-40 mm,64,50.535,surveillance
+35-40 mm,65,49.635000000000005,surveillance
+40-45 mm,60,54.837,surveillance
+40-45 mm,61,53.154,surveillance
 40-45 mm,62,51.471000000000004,surveillance
-40-45 mm,63,49.788,surveillance
+40-45 mm,63,49.788000000000004,surveillance
 40-45 mm,64,48.105,surveillance
 40-45 mm,65,47.205,surveillance
-45-50 mm,60,52.334999999999994,surveillance
-45-50 mm,61,50.67000000000001,surveillance
+45-50 mm,60,52.335,surveillance
+45-50 mm,61,50.67,surveillance
 45-50 mm,62,49.005,surveillance
 45-50 mm,63,47.34,surveillance
 45-50 mm,64,45.675,surveillance
 45-50 mm,65,44.775,surveillance
-50-55 mm,60,49.83299999999999,surveillance
-50-55 mm,61,48.18600000000001,surveillance
+50-55 mm,60,49.833,surveillance
+50-55 mm,61,48.186,surveillance
 50-55 mm,62,46.539,surveillance
-50-55 mm,63,44.891999999999996,surveillance
+50-55 mm,63,44.892,surveillance
 50-55 mm,64,43.245,surveillance
 50-55 mm,65,42.345,surveillance
 55-60 mm,60,47.331,surveillance
-55-60 mm,61,45.70200000000001,surveillance
+55-60 mm,61,45.702000000000005,surveillance
 55-60 mm,62,44.07300000000001,surveillance
-55-60 mm,63,42.444,surveillance
+55-60 mm,63,42.44400000000001,surveillance
 55-60 mm,64,40.815,surveillance
 55-60 mm,65,39.915,surveillance
-60-65 mm,60,44.82899999999999,surveillance
-60-65 mm,61,43.21800000000002,surveillance
+60-65 mm,60,44.829,surveillance
+60-65 mm,61,43.218,surveillance
 60-65 mm,62,41.607000000000006,surveillance
 60-65 mm,63,39.99600000000001,surveillance
-60-65 mm,64,38.385000000000005,surveillance
+60-65 mm,64,38.385,surveillance
 60-65 mm,65,37.485,surveillance
 65-70 mm,60,42.327,surveillance
-65-70 mm,61,40.73400000000001,surveillance
+65-70 mm,61,40.734,surveillance
 65-70 mm,62,39.141000000000005,surveillance
 65-70 mm,63,37.548,surveillance
 65-70 mm,64,35.955,surveillance
 65-70 mm,65,35.055,surveillance
-70-75 mm,60,39.824999999999996,surveillance
-70-75 mm,61,38.25000000000001,surveillance
-70-75 mm,62,36.675,surveillance
-70-75 mm,63,35.10000000000001,surveillance
+70-75 mm,60,39.825,surveillance
+70-75 mm,61,38.25,surveillance
+70-75 mm,62,36.675000000000004,surveillance
+70-75 mm,63,35.1,surveillance
 70-75 mm,64,33.525,surveillance
 70-75 mm,65,32.625,surveillance
-75-80 mm,60,37.32299999999999,surveillance
-75-80 mm,61,35.766000000000005,surveillance
-75-80 mm,62,34.208999999999996,surveillance
-75-80 mm,63,32.652,surveillance
+75-80 mm,60,37.323,surveillance
+75-80 mm,61,35.766,surveillance
+75-80 mm,62,34.209,surveillance
+75-80 mm,63,32.65200000000001,surveillance
 75-80 mm,64,31.095,surveillance
 75-80 mm,65,30.195,surveillance
 > 80 mm,60,34.821,surveillance
 > 80 mm,61,33.282000000000004,surveillance
-> 80 mm,62,31.743,surveillance
-> 80 mm,63,30.204,surveillance
+> 80 mm,62,31.743000000000006,surveillance
+> 80 mm,63,30.204000000000008,surveillance
 > 80 mm,64,28.665,surveillance
-> 80 mm,65,27.764999999999997,surveillance
+> 80 mm,65,27.765,surveillance

@@ -33,7 +33,8 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
     state_indexes = {state: idx for idx, state in enumerate(states)}  # dictionary time (faster)
 
     V = np.zeros(len(states)) # so that way we have the outcome of every possible policy
-    policy = {}
+    policy = {} # keep track of what policies we use when
+
     converged = False
     while not converged: # make sure that you force transition if you can!!
         converged = True
@@ -57,20 +58,23 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
             best_action = None
 
             for action in actions:
-                future_action_value = 0
+                future_value = 0
                 if action == "surgery":
-                    df = dfe
-                else:
                     df = dfy
+                else:
+                    df = dfe
 
                 new_states = transition_states(state)
                 for new_state in new_states:
                     new_health, new_age = new_state
                     transition_prob = df.loc[health, new_health] # how likely we are to transition to a new state
+                    # as far as I can tell its pulling the correct transition probabilities.
+                    #print(f"Action: {action}, Current Health: {health}, Current Age: {age} New Health: {new_health}, Transition Prob: {transition_prob}")
                     if transition_prob > 0: # if its possible to occur
                         new_state_index = state_indexes[new_state] # find where the new state exists
-                        future_value = transition_prob * (reward + (gamma * V[new_state_index]))
-                        future_action_value += future_value
+                        future_value += transition_prob * V[new_state_index]
+
+                future_action_value = reward + (gamma * future_value)
 
                 if future_action_value > best_value:
                     best_value = future_action_value
@@ -147,7 +151,6 @@ def transition_states(state): # returns all the possible states from our current
     next_health = next_aneurysm_size(health)
 
     for new_health in possible_healths: # creates all of the possible new states
-        # Do I need to disallow double dipping? I think its fine, we just need to consider the chances of it happening
         if new_health == "Dead":
             new_states.append(("Dead", new_age))
         if new_health == "no AAA":
@@ -157,7 +160,7 @@ def transition_states(state): # returns all the possible states from our current
         if new_health == "Size + 1":
             new_states.append((next_health, new_age))
 
-    new_states = remove_duplicate_tuples(new_states) # exactly what it says on the tin.
+    new_states = remove_duplicate_tuples(new_states) # exactly what it says on the tin. No double dipping!
     return new_states
 
 def remove_duplicate_tuples(tuple_list):
