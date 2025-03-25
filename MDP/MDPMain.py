@@ -39,7 +39,7 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
         converged = True
         for state in states:
             health, age = state
-            if health == "<30 mm" and age == 30:
+            if health == "no AAA" and age == 60:
                 print("Walk through this one!")
             state_index = state_indexes[state]
             if health == "Dead":
@@ -125,8 +125,9 @@ def transition_states(state): # returns all the possible states from our current
 
     new_states = []
     health, age = state
-    if health == "> 80 mm":
-        print("This should be the duplicate here. make sure to remove it")
+
+    if health == "Dead":
+        return new_states
 
     if age == 35:
         new_age = 35
@@ -147,7 +148,7 @@ def transition_states(state): # returns all the possible states from our current
         if new_health == "Size + 1":
             new_states.append((next_health, new_age))
 
-    new_states = remove_duplicate_tuples(new_states) # exactly what it says on the tin.
+    #new_states = remove_duplicate_tuples(new_states) # exactly what it says on the tin.
     return new_states
 
 def remove_duplicate_tuples(tuple_list):
@@ -175,8 +176,10 @@ def save_values_to_cvs(V, policy, states, age, gamma):
 
 
 if __name__ == '__main__':
-    ages = [40]#, 60]
-    gammas = [0.9]#, 0.7]
+    # ages = [30, 60]
+    # gammas = [0.9, 0.7]
+    ages = [60] # testing specific edgecase.
+    gammas = [0.9]
     for age in ages:
         for gamma in gammas:
             run_fetcher(age, gamma)
