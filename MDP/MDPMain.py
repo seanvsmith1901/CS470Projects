@@ -40,16 +40,15 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
         converged = True
         for state in states:
             health, age = state
-            if health == "no AAA" and age == 60:
-                print("Walk through this one!")
-            state_index = state_indexes[state]
+            state_index = state_indexes[state] # we love dictionary lookups.
             if health == "Dead":
                 V[state_index] = -100 # fixed reward here. will it help? no clue.
-                continue # nothing to calcualte here.
-            if health == "no AAA":
-                V[state_index] = reward_function(state)
-                policy[state] = "surveillance"
-                continue
+                # there is no policy here. Theere is nothing to do.
+                continue # terminal state, don't expand.
+            # if health == "no AAA": # this is wrong. tihs can expand.
+            #     V[state_index] = reward_function(state)
+            #     policy[state] = "surveillance"
+            #     continue
 
             reward = reward_function(state) # this is the reward where I am right now.
             old_value = V[state_index]
@@ -64,12 +63,12 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
                 else:
                     df = dfe
 
-                new_states = transition_states(state)
-                for new_state in new_states:
+                new_states = transition_states(state, action)
+                for new_state in new_states: # we have more options here.
                     new_health, new_age = new_state
                     transition_prob = df.loc[health, new_health] # how likely we are to transition to a new state
                     # as far as I can tell its pulling the correct transition probabilities.
-                    print(f"Action: {action}, Current Health: {health}, Current Age: {age} New Health: {new_health}, Transition Prob: {transition_prob}")
+                    #print(f"Action: {action}, Current Health: {health}, Current Age: {age} New Health: {new_health}, Transition Prob: {transition_prob}")
                     if transition_prob > 0: # if its possible to occur
                         new_state_index = state_indexes[new_state] # find where the new state exists
                         future_value += transition_prob * V[new_state_index]
@@ -133,13 +132,16 @@ def get_new_age(state):
         new_age = age + 1
     return new_age
 
-def transition_states(state): # returns all the possible states from our current state
-    possible_healths = ["Dead", "no AAA", "Same_size", "Size + 1"]
+def transition_states(state, action): # returns all the possible states from our current state
+    if action == "surveillance":
+        possible_healths = ["Dead", "no AAA", "Same_size", "Size + 1"]
+    else:
+        possible_healths = ["Dead", "no AAA"] # surgery either works or kills you. No other consideratino is made.
 
     new_states = []
     health, age = state
 
-    if health == "Dead":
+    if health == "Dead": # This never goes off, but just in case.
         return new_states
 
     if age == 35:
@@ -148,6 +150,7 @@ def transition_states(state): # returns all the possible states from our current
         new_age = 65
     else:
         new_age = age + 1
+    # new age never exceeds 35 or 65, so thats nice.
     next_health = next_aneurysm_size(health)
 
     for new_health in possible_healths: # creates all of the possible new states
@@ -155,9 +158,9 @@ def transition_states(state): # returns all the possible states from our current
             new_states.append(("Dead", new_age))
         if new_health == "no AAA":
             new_states.append(("no AAA", new_age))
-        if new_health == "Same_size":
+        if new_health == "Same_size": # probability of staying
             new_states.append((health, new_age))
-        if new_health == "Size + 1":
+        if new_health == "Size + 1": # probability of moving on.
             new_states.append((next_health, new_age))
 
     new_states = remove_duplicate_tuples(new_states) # exactly what it says on the tin. No double dipping!
