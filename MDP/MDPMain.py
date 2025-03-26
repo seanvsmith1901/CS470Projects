@@ -69,7 +69,7 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
                     new_health, new_age = new_state
                     transition_prob = df.loc[health, new_health] # how likely we are to transition to a new state
                     # as far as I can tell its pulling the correct transition probabilities.
-                    #print(f"Action: {action}, Current Health: {health}, Current Age: {age} New Health: {new_health}, Transition Prob: {transition_prob}")
+                    print(f"Action: {action}, Current Health: {health}, Current Age: {age} New Health: {new_health}, Transition Prob: {transition_prob}")
                     if transition_prob > 0: # if its possible to occur
                         new_state_index = state_indexes[new_state] # find where the new state exists
                         future_value += transition_prob * V[new_state_index]
