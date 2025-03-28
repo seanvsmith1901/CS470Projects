@@ -4,14 +4,14 @@ import numpy as np
 
 states_1 = ["Dead", "no AAA", "<30 mm", "30-35 mm", "35-40 mm", "40-45 mm", "45-50 mm", "50-55 mm", "55-60 mm", "60-65 mm", "65-70 mm", "70-75 mm",  "75-80 mm", "> 80 mm"]
 
-states_30 = [30, 31, 32, 33, 34, 35]
-states_60 = [60, 61, 62, 63, 64, 65]
+states_30 = [30, 31, 32, 33, 34, 35] # only considering the ages 30-35
+states_60 = [60, 61, 62, 63, 64, 65] # only considering the ages 60-65
 
-actions = ["surgery", "surveillance"]
+actions = ["surgery", "surveillance"] # the only possible actions in this space.
 
 epsilon = 1e-6 # not put in the spec, but seems necessary for convergence. at least in the examples I am looking at.
 
-def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
+def run_fetcher(passed_age, gamma): # our data frame of choice (which transition tables we use)
     if passed_age == 30:
         dfe = pd.read_csv("30-35 - survelliance.csv", index_col=0)
         dfy = pd.read_csv("30-35 - surgery.csv", index_col=0)
@@ -45,50 +45,51 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
                 V[state_index] = -100 # fixed reward here. will it help? no clue.
                 # there is no policy here. Theere is nothing to do.
                 continue # terminal state, don't expand.
-            # if health == "no AAA": # this is wrong. tihs can expand.
-            #     V[state_index] = reward_function(state)
-            #     policy[state] = "surveillance"
-            #     continue
+            # geting rid of this makes it only ever recommend surgery.
+            elif health == "no AAA": # this is wrong. tihs can expand.
+                V[state_index] = reward_function(state)
+                policy[state] = "surveillance"
+                continue
 
             reward = reward_function(state) # this is the reward where I am right now.
-            old_value = V[state_index]
+            old_value = V[state_index] # need something to compare it to.
 
-            best_value = float("-inf")
-            best_action = None
+            best_value = float("-inf") # current best value from action
+            best_action = None # current best action
 
-            for action in actions:
-                future_value = 0
-                if action == "surgery":
+            for action in actions: # have to try every action and go from there
+                future_value = 0 # expected value from that action
+                if action == "surgery": # set up the transition tables
                     df = dfy
                 else:
                     df = dfe
 
-                new_states = transition_states(state, action)
-                for new_state in new_states: # we have more options here.
+                new_states = transition_states(state, action) # get the new states given our action and our current state.
+                for new_state in new_states: # go through every possible consequence
                     new_health, new_age = new_state
                     transition_prob = df.loc[health, new_health] # how likely we are to transition to a new state
                     # as far as I can tell its pulling the correct transition probabilities.
                     #print(f"Action: {action}, Current Health: {health}, Current Age: {age} New Health: {new_health}, Transition Prob: {transition_prob}")
                     if transition_prob > 0: # if its possible to occur
                         new_state_index = state_indexes[new_state] # find where the new state exists
-                        future_value += transition_prob * V[new_state_index]
+                        future_value += transition_prob * V[new_state_index] # add the future value to it from all the new states
 
-                future_action_value = reward + (gamma * future_value)
+                future_action_value = reward + (gamma * future_value) # add the current reward, disctount the future rewared, consider
 
-                if future_action_value > best_value:
-                    best_value = future_action_value
-                    best_action = action
+                if future_action_value > best_value: # if its a new best
+                    best_value = future_action_value # let it stick around
+                    best_action = action # keep track of best
 
-            V[state_index] = best_value
-            policy[state] = best_action
+            V[state_index] = best_value # after considering every action, find best vlauer we can get
+            policy[state] = best_action # and keep track of the best action
 
             # check for convergence
             if abs(best_value - old_value) > epsilon:
                 converged = False # this breaks
 
 
-    print(V)
-    save_values_to_cvs(V, policy, states, passed_age, gamma)
+    print(V) # just for fun
+    save_values_to_cvs(V, policy, states, passed_age, gamma) # helps me keep track of everything.
 
 def reward_function(state):
     health = state[0]
