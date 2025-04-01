@@ -51,13 +51,15 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (which transition
                 policy[state] = "surveillance"
                 continue
 
-            reward = reward_function(state) # this is the reward where I am right now.
+
             old_value = V[state_index] # need something to compare it to.
 
             best_value = float("-inf") # current best value from action
             best_action = None # current best action
 
             for action in actions: # have to try every action and go from there
+                reward = reward_function(state, action)  # this is the reward where I am right now.
+
                 future_value = 0 # expected value from that action
                 if action == "surgery": # set up the transition tables
                     df = dfy
@@ -135,7 +137,7 @@ def get_new_age(state):
 
 def transition_states(state, action): # returns all the possible states from our current state
     if action == "surveillance":
-        possible_healths = ["Dead", "no AAA", "Same_size", "Size + 1"]
+        possible_healths = ["Dead", "no AAA", "Same_size", "Size + 1", "Size + 2"]
     else:
         possible_healths = ["Dead", "no AAA"] # surgery either works or kills you. No other consideratino is made.
 
@@ -153,6 +155,7 @@ def transition_states(state, action): # returns all the possible states from our
         new_age = age + 1
     # new age never exceeds 35 or 65, so thats nice.
     next_health = next_aneurysm_size(health)
+    next_next_health = next_aneurysm_size(next_health)
 
     for new_health in possible_healths: # creates all of the possible new states
         if new_health == "Dead":
@@ -163,6 +166,8 @@ def transition_states(state, action): # returns all the possible states from our
             new_states.append((health, new_age))
         if new_health == "Size + 1": # probability of moving on.
             new_states.append((next_health, new_age))
+        if new_health == "Size + 2":  # probability of growing 2 sizes between visits.
+            new_states.append((next_next_health, new_age))
 
     new_states = remove_duplicate_tuples(new_states) # exactly what it says on the tin. No double dipping!
     return new_states
@@ -192,10 +197,8 @@ def save_values_to_cvs(V, policy, states, age, gamma):
 
 
 if __name__ == '__main__':
-    ages = [30, 60]
+    ages = [45]
     gammas = [0.9, 0.7]
-    # ages = [60] # testing specific edgecase.
-    # gammas = [0.9]
     for age in ages:
         for gamma in gammas:
             run_fetcher(age, gamma)

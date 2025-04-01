@@ -1,25 +1,34 @@
 # literally no clue what to pu there.
 import pandas as pd
 import numpy as np
-from past.types import oldstr
 
 states_1 = ["Dead", "no AAA", "<30 mm", "30-35 mm", "35-40 mm", "40-45 mm", "45-50 mm", "50-55 mm", "55-60 mm", "60-65 mm", "65-70 mm", "70-75 mm",  "75-80 mm", "> 80 mm"]
+specified_size_1 = ["60-65 mm", "65-70 mm", "70-75 mm",  "75-80 mm", "> 80 mm"]
+specified_size_2 = ["65-70 mm", "70-75 mm",  "75-80 mm", "> 80 mm"]
+specified_size_3 = ["70-75 mm",  "75-80 mm", "> 80 mm"]
+specified_size_4 = ["75-80 mm", "> 80 mm"]
+specified_size_5 = ["> 80 mm"]
 
-states_30 = [30, 31, 32, 33, 34, 35]
-states_60 = [60, 61, 62, 63, 64, 65]
 
-actions = ["surgery", "surveillance"]
+states_30 = [30, 31, 32, 33, 34, 35] # only considering the ages 30-35
+states_60 = [60, 61, 62, 63, 64, 65] # only considering the ages 60-65
+
+actions = ["surgery", "surveillance"] # the only possible actions in this space.
 
 epsilon = 1e-6 # not put in the spec, but seems necessary for convergence. at least in the examples I am looking at.
 
-def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
+def run_fetcher(passed_age, gamma): # our data frame of choice (which transition tables we use)
     if passed_age == 30:
         dfe = pd.read_csv("30-35 - survelliance.csv", index_col=0)
         dfy = pd.read_csv("30-35 - surgery.csv", index_col=0)
         states_2 = states_30
     elif passed_age == 40:
-        dfe = pd.read_csv("40-45 - survelliance.csv", index_col=0)
-        dfy = pd.read_csv("40-45 - surgery.csv", index_col=0)
+        dfe = pd.read_csv("40-45 survelliance.csv", index_col=0)
+        dfy = pd.read_csv("40-45 surgery.csv", index_col=0)
+        states_2 = states_30
+    elif passed_age == 45:
+        dfe = pd.read_csv("45-50 surveillance.csv", index_col=0)
+        dfy = pd.read_csv("45-50 surgery.csv", index_col=0)
         states_2 = states_30
     elif passed_age == 60:
         dfe = pd.read_csv("60-65 - surveilence.csv", index_col=0)
@@ -34,90 +43,98 @@ def run_fetcher(passed_age, gamma): # our data frame of choice (30 by default)
     state_indexes = {state: idx for idx, state in enumerate(states)}  # dictionary time (faster)
 
     V = np.zeros(len(states)) # so that way we have the outcome of every possible policy
-    policy = {}
+    policy = {} # keep track of what policies we use when
+
     converged = False
     while not converged: # make sure that you force transition if you can!!
         converged = True
-        # so first lets find the reward
         for state in states:
+            health, age = state
+            state_index = state_indexes[state] # we love dictionary lookups.
+            if health == "Dead":
+                V[state_index] = -100 # fixed reward here. will it help? no clue.
+                # there is no policy here. Theere is nothing to do.
+                continue # terminal state, don't expand.
+            # geting rid of this makes it only ever recommend surgery.
+            elif health == "no AAA": # this is wrong. tihs can expand.
+                V[state_index] = reward_function(state, "surveillance")
+                policy[state] = "surveillance"
+                continue
 
-            state_index = state_indexes[state]
-            old_value = V[state_index]
+            old_value = V[state_index] # need something to compare it to.
 
-            reward = reward_function(state)
+            best_value = float("-inf") # current best value from action
+            best_action = None # current best action
 
-            action_values = []
-
-            for action in actions: # now lets consider every possible action
-                df = dfy if action == "surgery" else dfe # to get the transition probs
-
-                new_states = transition_states(state)
-                print("here is the state ", state, " and the new states ", new_states)
-                for new_state in new_states: # for every possible state we could go through
-
-                    new_state_index = state_indexes[new_state] # get the new index
-                    transition_probability = df.loc[state[0], new_state[0]] # get the transition probability based on the action and state
-                    new_value = reward + (gamma * (transition_probability * V[new_state_index])) # get the new value
-                    action_values.append(new_value) # sum it up so we can look into the future and see which is better
-
-                if action_values:
-                    best_action_value = max(action_values)
-                    action_values.append(best_action_value)
+            for action in actions: # have to try every action and go from there
+                reward = reward_function(state, action)
+                future_value = 0 # expected value from that action
+                if action == "surgery": # set up the transition tables
+                    df = dfy
                 else:
-                    action_values.append(float("-inf"))
+                    df = dfe
 
+                new_states = transition_states(state, action) # get the new states given our action and our current state.
+                for new_state in new_states: # go through every possible consequence
+                    new_health, new_age = new_state
+                    transition_prob = df.loc[health, new_health] # how likely we are to transition to a new state
+                    # as far as I can tell its pulling the correct transition probabilities.
+                    #print(f"Action: {action}, Current Health: {health}, Current Age: {age} New Health: {new_health}, Transition Prob: {transition_prob}")
+                    if transition_prob > 0: # if its possible to occur
+                        new_state_index = state_indexes[new_state] # find where the new state exists
+                        future_value += transition_prob * V[new_state_index] # add the future value to it from all the new states
 
-            best_value = max(action_values)
-            best_action = actions[action_values.index(best_value)]
-            V[state_index] = best_value # put our best foot forward.
-            policy[state] = best_action
+                future_action_value = reward + (gamma * future_value) # add the current reward, disctount the future rewared, consider
+
+                if future_action_value > best_value: # if its a new best
+                    best_value = future_action_value # let it stick around
+                    best_action = action # keep track of best
+
+            V[state_index] = best_value # after considering every action, find best vlauer we can get
+            policy[state] = best_action # and keep track of the best action
 
             # check for convergence
             if abs(best_value - old_value) > epsilon:
-                converged = False  # this breaks
+                converged = False # this breaks
 
 
-    print(V)
-    save_values_to_cvs(V, policy, states, passed_age, gamma)
-
-def transition_states(state): # returns all the possible states from our current state
-    possible_healths = ["Dead", "no AAA", "Same_size", "Size + 1"]
-
-    new_states = []
-    health, age = state
-
-    if age == 35:
-        new_age = 35
-    elif age == 65:
-        new_age = 65
-    else:
-        new_age = age + 1
-    next_health = next_aneurysm_size(health)
-
-    for new_health in possible_healths: # creates all of the possible new states
-        # Do I need to disallow double dipping? I think its fine, we just need to consider the chances of it happening
-        if new_health == "Dead":
-            new_states.append(("Dead", new_age))
-        if new_health == "no AAA":
-            new_states.append(("no AAA", new_age))
-        if new_health == "Same_size":
-            new_states.append((health, new_age))
-        if new_health == "Size + 1":
-            new_states.append((next_health, new_age))
-
-    return new_states
+    print(V) # just for fun
+    save_values_to_cvs(V, policy, states, passed_age, gamma) # helps me keep track of everything.
 
 
 
-def reward_function(state):
+def reward_function(state, action):
     health = state[0]
     age = state[1]
     if health == "no AAA":
         return 100 - age
     elif health == "Dead":
         return -100
-    else:
-        return 0.9 * (100 - age)
+    elif health in specified_size_1: # if we are above a certian range
+            if health in specified_size_5:
+                if action == "surgery":
+                    return 0.99 * (100 - age)
+                return 0.60 * (100 - age)
+            elif health in specified_size_4:
+                if action == "surgery":
+                    return 0.95 * (100 - age)
+                return 0.65 * (100 - age)
+            elif health in specified_size_3:
+                if action == "surgery":
+                    return 0.90 * (100 - age)
+                return 0.70 * (100 - age)
+            elif health in specified_size_2:
+                if action == "surgery":
+                    return 0.85 * (100 - age)
+                return 0.75 * (100 - age)
+            elif health in specified_size_1:
+                if action == "surgery":
+                    return 0.72 * (100 - age)
+                return 0.68 * (100 - age)
+
+    else: # first, change QUALY to be less certain. Then, adjust for age.
+        # so if they have big boy tumor, surgery is better and surveillience is way worse. repeat.
+        return 0.7 * (100 - age)
 
 
 def next_aneurysm_size(current_health):
@@ -141,6 +158,60 @@ def next_aneurysm_size(current_health):
     else:
         return current_health  # in case death or whatever.
 
+def get_new_age(state):
+    _, age = state
+    if age == 35:
+        new_age = 35
+    elif age == 65:
+        new_age = 65
+    else:
+        new_age = age + 1
+    return new_age
+
+def transition_states(state, action): # returns all the possible states from our current state
+    if action == "surveillance":
+        possible_healths = ["Dead", "no AAA", "Same_size", "Size + 1"]
+    else:
+        possible_healths = ["Dead", "no AAA"] # surgery either works or kills you. No other consideratino is made.
+
+    new_states = []
+    health, age = state
+
+    if health == "Dead": # This never goes off, but just in case.
+        return new_states
+
+    if age == 35:
+        new_age = 35
+    elif age == 65:
+        new_age = 65
+    else:
+        new_age = age + 1
+    # new age never exceeds 35 or 65, so thats nice.
+    next_health = next_aneurysm_size(health)
+
+    for new_health in possible_healths: # creates all of the possible new states
+        if new_health == "Dead":
+            new_states.append(("Dead", new_age))
+        if new_health == "no AAA":
+            new_states.append(("no AAA", new_age))
+        if new_health == "Same_size": # probability of staying
+            new_states.append((health, new_age))
+        if new_health == "Size + 1": # probability of moving on.
+            new_states.append((next_health, new_age))
+
+    new_states = remove_duplicate_tuples(new_states) # exactly what it says on the tin. No double dipping!
+    return new_states
+
+def remove_duplicate_tuples(tuple_list):
+    seen = set()
+    new_list = []
+    for tup in tuple_list:
+        if tuple(tup) not in seen:
+            new_list.append(tup)
+            seen.add(tuple(tup))
+    return new_list
+
+
 def save_values_to_cvs(V, policy, states, age, gamma):
     print("this is the age", age)
     filename = "Vfor" + str(age) + "." + str(gamma) + ".csv"
@@ -156,8 +227,10 @@ def save_values_to_cvs(V, policy, states, age, gamma):
 
 
 if __name__ == '__main__':
-    ages = [40]#, 60]
-    gammas = [0.9]#, 0.7]
+    # ages = [30, 60] # testing specific edgecase.
+    # gammas = [0.9, 0.7]
+    ages = [45]
+    gammas = [0.9, 0.7]
     for age in ages:
         for gamma in gammas:
             run_fetcher(age, gamma)

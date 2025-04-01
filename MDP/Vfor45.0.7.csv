@@ -1,0 +1,85 @@
+Health,Age,Value,Best Action
+Dead,30,-100.0,
+Dead,31,-100.0,
+Dead,32,-100.0,
+Dead,33,-100.0,
+Dead,34,-100.0,
+Dead,35,-100.0,
+no AAA,30,70.0,surveillance
+no AAA,31,69.0,surveillance
+no AAA,32,68.0,surveillance
+no AAA,33,67.0,surveillance
+no AAA,34,66.0,surveillance
+no AAA,35,65.0,surveillance
+<30 mm,30,96.14456494844211,surveillance
+<30 mm,31,94.59632094377461,surveillance
+<30 mm,32,93.11056336627462,surveillance
+<30 mm,33,91.74435586627462,surveillance
+<30 mm,34,90.60685586627461,surveillance
+<30 mm,35,89.90685586627461,surveillance
+30-35 mm,30,93.64149796193884,surveillance
+30-35 mm,31,92.10701310664734,surveillance
+30-35 mm,32,90.63396069714733,surveillance
+30-35 mm,33,89.27847719714734,surveillance
+30-35 mm,34,88.14797719714734,surveillance
+30-35 mm,35,87.44797719714734,surveillance
+35-40 mm,30,91.1673058586436,surveillance
+35-40 mm,31,89.64658015272809,surveillance
+35-40 mm,32,88.18623291122809,surveillance
+35-40 mm,33,86.8414734112281,surveillance
+35-40 mm,34,85.7179734112281,surveillance
+35-40 mm,35,85.0179734112281,surveillance
+40-45 mm,30,88.8085247587953,surveillance
+40-45 mm,31,87.30145946353178,surveillance
+40-45 mm,32,85.8538173900318,surveillance
+40-45 mm,33,84.5197818900318,surveillance
+40-45 mm,34,83.40328189003179,surveillance
+40-45 mm,35,82.7032818900318,surveillance
+45-50 mm,30,86.89777505820132,surveillance
+45-50 mm,31,85.40244450966802,surveillance
+45-50 mm,32,83.96689432016801,surveillance
+45-50 mm,33,82.643582820168,surveillance
+45-50 mm,34,81.53408282016801,surveillance
+45-50 mm,35,80.83408282016802,surveillance
+50-55 mm,30,86.68011155088915,surveillance
+50-55 mm,31,85.18513323496799,surveillance
+50-55 mm,32,83.75156697971963,surveillance
+50-55 mm,33,82.43532897971963,surveillance
+50-55 mm,34,81.33282897971964,surveillance
+50-55 mm,35,80.63282897971965,surveillance
+55-60 mm,30,92.68374559527273,surveillance
+55-60 mm,31,91.14465669763115,surveillance
+55-60 mm,32,89.6690559742947,surveillance
+55-60 mm,33,88.30972480144793,surveillance
+55-60 mm,34,87.19336480144793,surveillance
+55-60 mm,35,86.49336480144794,surveillance
+60-65 mm,30,79.99493857102999,surveillance
+60-65 mm,31,78.56629321,surveillance
+60-65 mm,32,77.17447,surveillance
+60-65 mm,33,75.88999999999999,surgery
+60-65 mm,34,74.73974124809646,surveillance
+60-65 mm,35,74.05974124809646,surveillance
+65-70 mm,30,88.725,surgery
+65-70 mm,31,87.35,surgery
+65-70 mm,32,85.975,surgery
+65-70 mm,33,84.6,surgery
+65-70 mm,34,83.225,surgery
+65-70 mm,35,82.375,surgery
+70-75 mm,30,92.225,surgery
+70-75 mm,31,90.8,surgery
+70-75 mm,32,89.375,surgery
+70-75 mm,33,87.95,surgery
+70-75 mm,34,86.525,surgery
+70-75 mm,35,85.625,surgery
+75-80 mm,30,95.725,surgery
+75-80 mm,31,94.25,surgery
+75-80 mm,32,92.77499999999999,surgery
+75-80 mm,33,91.3,surgery
+75-80 mm,34,89.82499999999999,surgery
+75-80 mm,35,88.875,surgery
+> 80 mm,30,98.52499999999999,surgery
+> 80 mm,31,97.01,surgery
+> 80 mm,32,95.49499999999999,surgery
+> 80 mm,33,93.97999999999999,surgery
+> 80 mm,34,92.465,surgery
+> 80 mm,35,91.475,surgery
